@@ -1,20 +1,17 @@
 import { createHud } from "./hud.js";
-import { Movement } from "./movement.js";
 import { config as c } from "./config.js";
 import { Practice } from "./practice.js";
 import { createScene } from "./scene.js";
 import { bindControls } from "./controls.js";
 const canvas = document.querySelector("canvas"),
   shot = new Practice();
-const movement = new Movement(shot.player);
-shot.movement = movement;
+
 try {
   const scene = createScene(canvas),
     updateControls = bindControls(
       document.querySelector("#shoot"),
       shot,
       canvas,
-      movement,
     );
   const updateHud = createHud();
   let last = performance.now(),
@@ -24,6 +21,7 @@ try {
     accumulator += dt;
     last = now;
     while (accumulator >= 1 / 240) {
+      const movement = shot.movement;
       movement.yaw = shot.phase === "windup" ? shot.launch.yaw : shot.aim.yaw;
       movement.facingTarget =
         shot.pass && ["passWindup", "passing", "receive"].includes(shot.phase)
@@ -49,12 +47,12 @@ try {
     updateHud(shot);
     document.querySelector("#hint").textContent =
       shot.notice ||
-      (shot.phase === "companionHold"
-        ? "Silva tiene el balón. Pulsa E para pedir la devolución."
-        : ["passing", "passWindup", "receive"].includes(shot.phase)
-          ? "Pase en curso · Espera a la recepción."
+      (["passing", "passWindup", "receive"].includes(shot.phase)
+        ? "El control cambia solo después de recibir el balón."
+        : shot.phase === "passMiss"
+          ? "Pase no recibido. Se conserva el jugador controlado."
           : shot.phase === "ready"
-            ? "WASD para moverte · Mouse para apuntar · Mantén clic izquierdo y suelta."
+            ? "WASD para moverte · Mouse para apuntar · E para pasar."
             : shot.phase === "charging"
               ? "Suelta el clic izquierdo o Lanzar para tirar."
               : "Espera a que termine el intento.");

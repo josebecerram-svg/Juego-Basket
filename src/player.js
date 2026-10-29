@@ -261,27 +261,49 @@ export function createPlayer(
       );
   }
   const footwork = new Footwork();
+  let poseHip = 0.96,
+    animationTime = 0;
+  const relax = (value) => 1 - Math.exp(-value);
   return {
     group,
     footwork,
     update(shot, dt = 1 / 60) {
       const pose = playerPose(shot);
+      animationTime += dt;
+      const blend = relax(dt * 12);
+      poseHip += (pose.hip - poseHip) * blend;
+      pose.hip = poseHip;
       group.position.set(shot.player.x, 0, shot.player.z);
       group.rotation.y =
         shot.bodyYaw ??
         (shot.phase === "windup" ? shot.launch.yaw : shot.aim.yaw);
-      head.rotation.x =
+      const headPitch =
         (-0.08 * (shot.aim.angle - c.minAngle)) / (c.maxAngle - c.minAngle) -
         pose.crouch * 0.4;
-      body.position.y = pose.hip - 0.96;
-      body.rotation.x =
-        ((shot.movement?.forward ?? 0) / c.movement.speed) * 0.08;
-      body.rotation.z =
-        (-(shot.movement?.lateral ?? 0) / c.movement.speed) * 0.06;
+      head.rotation.x += (headPitch - head.rotation.x) * blend;
+      body.position.y =
+        pose.hip -
+        0.96 +
+        Math.sin(animationTime * 2.1) * 0.002 * (1 - pose.speed);
+      const motion = shot.movement,
+        cosYaw = Math.cos(group.rotation.y),
+        sinYaw = Math.sin(group.rotation.y);
+      const accelerationForward =
+          (motion?.ax ?? 0) * sinYaw + (motion?.az ?? 0) * cosYaw,
+        accelerationSide =
+          (motion?.ax ?? 0) * cosYaw - (motion?.az ?? 0) * sinYaw;
+      const leanX =
+        ((motion?.forward ?? 0) / c.movement.speed) * 0.07 +
+        accelerationForward * 0.009;
+      const leanZ =
+        (-(motion?.lateral ?? 0) / c.movement.speed) * 0.05 -
+        accelerationSide * 0.007;
+      body.rotation.x += (leanX - body.rotation.x) * blend;
+      body.rotation.z += (leanZ - body.rotation.z) * blend;
       const lookingAtPass =
         shot.pass && ["passWindup", "passing", "receive"].includes(shot.phase);
       const headTarget = lookingAtPass ? group.rotation.y : shot.aim.yaw;
-      head.rotation.y = Math.max(
+      const headYaw = Math.max(
         -0.4,
         Math.min(
           0.4,
@@ -291,6 +313,7 @@ export function createPlayer(
           ),
         ),
       );
+      head.rotation.y += (headYaw - head.rotation.y) * blend;
       hips.position.y = pose.hip - 0.96;
       const feet = footwork.update(
         dt,
@@ -332,12 +355,7 @@ export function createPlayer(
         leg.knee.position.copy(knee);
         leg.foot.position.copy(ankle).add(new T.Vector3(0, -0.12, 0));
         leg.foot.rotation.y = foot.yaw - group.rotation.y;
-        leg.foot.rotation.x = foot.swing
-          ? -0.12 *
-            Math.sin(
-              Math.PI * Math.min(1, foot.swing.time / foot.swing.duration),
-            )
-          : 0;
+        leg.foot.rotation.x = foot.pitch ?? 0;
         segment(
           leg.shortStripe,
           hip.clone().add(new T.Vector3(side * 0.1, 0, 0)),
@@ -357,6 +375,20 @@ export function createPlayer(
             pose.hand.y - 0.045,
             pose.hand.z - 0.015,
           );
+        if ((pose.hand.spread ?? 0) > 0.1) {
+          const opposite = feet[side < 0 ? 1 : 0],
+            dx = opposite.position.x - shot.player.x,
+            dz = opposite.position.z - shot.player.z;
+          const strideForward =
+            dx * Math.sin(group.rotation.y) + dz * Math.cos(group.rotation.y);
+          hand.z -= strideForward * 0.55 * pose.speed;
+          hand.y += Math.abs(strideForward) * 0.12 * pose.speed;
+        }
+        if (!arm.smoothedHand) arm.smoothedHand = hand.clone();
+        const holding =
+          shot.hasBall !== false && !["flight", "result"].includes(shot.phase);
+        arm.smoothedHand.lerp(hand, holding ? 1 : relax(dt * 14));
+        hand.copy(arm.smoothedHand);
         const elbow = elbowPoint(shoulder, hand, side);
         arm.shoulder.position.copy(shoulder);
         arm.elbow.position.copy(elbow);

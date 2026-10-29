@@ -40,6 +40,10 @@ export function createHud() {
     card = $(".player-hud"),
     band = $("#ideal-band");
   return (shot) => {
+    $("#controlled-name").textContent = shot.player.fullName;
+    $("#controlled-number").textContent = shot.player.number;
+    $("#score-player-name").textContent = shot.player.name;
+    $("#score-jersey").textContent = shot.player.number;
     const p = powerFeedback(shot),
       stats = shot.stats;
     $("#score").textContent = String(stats.points).padStart(2, "0");
@@ -65,8 +69,8 @@ export function createHud() {
       "receive",
     ].includes(shot.phase)
       ? "PASE EN CURSO"
-      : shot.phase === "companionHold"
-        ? "SIN BALÓN · PULSA E"
+      : shot.phase === "passMiss"
+        ? "RECUPERANDO BALÓN"
         : shot.phase === "charging"
           ? {
               low: "POTENCIA BAJA",
@@ -86,22 +90,21 @@ export function createHud() {
         passWindup: "Preparando pase",
         passing: "Pase en vuelo",
         receive: "Recibiendo el balón",
-        companionHold: "Silva tiene el balón",
+        passMiss: "Pase no recibido",
       }[shot.phase];
     $("#possession").textContent =
       shot.possession === "player"
-        ? "07 · RIVERA"
+        ? shot.player.number + " · " + shot.player.name
         : shot.possession === "companion"
-          ? "12 · SILVA"
+          ? shot.companion.number + " · " + shot.companion.name
           : "BALÓN EN VUELO";
-    $("#pass-action").textContent =
-      shot.possession === "companion" ? "Pedir balón" : "Pasar";
+    $("#pass-action").textContent = "Pasar";
     $("#pass-status").textContent =
       shot.notice ||
       (shot.phase === "ready"
         ? "E — Pasar"
-        : shot.phase === "companionHold"
-          ? "E — Pedir devolución"
+        : shot.phase === "receive"
+          ? "Recepción · cambio de control"
           : "Pase no disponible");
     $(".possession-hud").dataset.owner = shot.possession;
     $(".game").dataset.phase = shot.phase;

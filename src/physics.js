@@ -59,6 +59,7 @@ export class Shot {
       ...this.aim,
       yaw: this.aimYaw(),
       held: heldPosition(this),
+      crouch: Math.min(1, this.time / 0.4),
       hoop: { ...(this.targetHoop ?? c.hoop) },
       origin: {
         x: this.player.x + Math.sin(this.aimYaw()) * 0.38,

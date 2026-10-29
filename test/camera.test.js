@@ -117,3 +117,21 @@ test("camera includes both people and a traveling pass in portrait and desktop",
       }
     }
 });
+
+test("camera changes its follow target smoothly when the receiver takes control", async () => {
+  const { Practice } = await import("../src/practice.js");
+  const s = new Practice(),
+    rig = createCamera();
+  for (let i = 0; i < 60; i++) rig.update(1160, 660, s, 1 / 60);
+  s.requestPass();
+  while (s.phase !== "passing") s.step(1 / 240);
+  while (s.phase === "passing") s.step(1 / 240);
+  const before = rig.camera.position.clone();
+  rig.update(1160, 660, s, 1 / 60);
+  assert.ok(rig.camera.position.distanceTo(before) < 1);
+  rig.camera.updateMatrixWorld();
+  const controlled = new T.Vector3(s.player.x, 1, s.player.z).project(
+    rig.camera,
+  );
+  assert.ok(Math.abs(controlled.x) < 1 && Math.abs(controlled.y) < 1);
+});

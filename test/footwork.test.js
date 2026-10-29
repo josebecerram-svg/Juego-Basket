@@ -88,3 +88,34 @@ test("direction changes keep a grounded support foot and knees within human leg 
     }
   }
 });
+
+test("landing eases to a fixed contact with negligible last-frame foot travel", () => {
+  const p = { x: 0, z: 0 },
+    m = new Movement(p),
+    f = new Footwork(),
+    dt = 1 / 240;
+  m.keys.add("KeyW");
+  let landings = 0;
+  for (let i = 0; i < 700; i++) {
+    const old = f.feet.map((foot) =>
+      foot.position
+        ? { position: { ...foot.position }, swing: !!foot.swing }
+        : null,
+    );
+    m.step(dt, "ready");
+    const feet = f.update(dt, p, m.bodyYaw, m);
+    feet.forEach((foot, j) => {
+      if (old[j]?.swing && !foot.swing) {
+        assert.ok(
+          Math.hypot(
+            foot.position.x - old[j].position.x,
+            foot.position.z - old[j].position.z,
+          ) < 0.002,
+        );
+        assert.ok(foot.position.y === 0);
+        landings++;
+      }
+    });
+  }
+  assert.ok(landings > 4);
+});

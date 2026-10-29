@@ -1,5 +1,5 @@
 import { config as c } from "./config.js";
-export function bindControls(button, shot, canvas, movement) {
+export function bindControls(button, shot, canvas) {
   const yaw = document.querySelector("#direction"),
     angle = document.querySelector("#angle");
   yaw.min = -180;
@@ -76,13 +76,15 @@ export function bindControls(button, shot, canvas, movement) {
     }
     if (isInput(e)) return;
     if (Object.values(c.controls).includes(e.code)) {
-      movement.keys.add(e.code);
+      shot.inputKeys.add(e.code);
       e.preventDefault();
     }
   });
-  window.addEventListener("keyup", (e) => movement.keys.delete(e.code));
+  window.addEventListener("keyup", (e) => shot.inputKeys.delete(e.code));
   function clear() {
-    movement.clear();
+    shot.inputKeys.clear();
+    shot.movement.clear();
+    shot.companionMovement.clear();
     shot.cancel();
     owner = null;
   }

@@ -62,12 +62,14 @@ export function createScene(canvas) {
     seam.rotation.y = rot;
     ball.add(seam);
   }
-  const player = createPlayer(scene);
-  const companion = createPlayer(scene, {
-    name: "SILVA",
-    number: "12",
-    skin: "#c99773",
-  });
+  const models = {
+    rivera: createPlayer(scene),
+    silva: createPlayer(scene, {
+      name: "SILVA",
+      number: "12",
+      skin: "#c99773",
+    }),
+  };
   function marker(color) {
     const m = new T.Mesh(
       new T.RingGeometry(0.38, 0.43, 40),
@@ -85,27 +87,37 @@ export function createScene(canvas) {
   }
   const playerMarker = marker("#d5ff5f"),
     companionMarker = marker("#7acaff");
-  const cv = document.createElement("canvas");
-  cv.width = 256;
-  cv.height = 64;
-  const context = cv.getContext("2d");
-  context.fillStyle = "#10202bee";
-  context.fillRect(0, 0, 256, 64);
-  context.fillStyle = "#ecf5f5";
-  context.textAlign = "center";
-  context.font = "bold 24px Arial";
-  context.fillText("12  SILVA", 128, 41);
-  const labelTex = new T.CanvasTexture(cv);
-  labelTex.colorSpace = T.SRGBColorSpace;
-  const label = new T.Sprite(
-    new T.SpriteMaterial({
-      map: labelTex,
-      transparent: true,
-      depthTest: false,
-    }),
-  );
-  label.scale.set(1, 0.25, 1);
-  scene.add(label);
+  const labels = {};
+  for (const [id, number, name] of [
+    ["rivera", "07", "RIVERA"],
+    ["silva", "12", "SILVA"],
+  ]) {
+    labels[id] = {};
+    for (const role of ["TÚ", "IA"]) {
+      const cv = document.createElement("canvas");
+      cv.width = 384;
+      cv.height = 64;
+      const context = cv.getContext("2d");
+      context.fillStyle = "#10202bee";
+      context.fillRect(0, 0, 384, 64);
+      context.fillStyle = role === "TÚ" ? "#d5ff5f" : "#ecf5f5";
+      context.textAlign = "center";
+      context.font = "bold 24px Arial";
+      context.fillText(number + " " + name + " · " + role, 192, 41);
+      const texture = new T.CanvasTexture(cv);
+      texture.colorSpace = T.SRGBColorSpace;
+      const label = new T.Sprite(
+        new T.SpriteMaterial({
+          map: texture,
+          transparent: true,
+          depthTest: false,
+        }),
+      );
+      label.scale.set(1.3, 0.22, 1);
+      scene.add(label);
+      labels[id][role] = label;
+    }
+  }
   const rig = createCamera();
   const guide = line([], "#dbef95");
   guide.material.transparent = true;
@@ -116,12 +128,15 @@ export function createScene(canvas) {
         h = canvas.clientHeight;
       renderer.setSize(w, h, false);
       rig.update(w, h, shot, dt);
-      player.update(shot, dt);
-      if (shot.companion) {
-        companion.update(shot.companionState(), dt);
-        label.position.set(shot.companion.x, 2.18, shot.companion.z);
-        companionMarker.position.set(shot.companion.x, 0.04, shot.companion.z);
-      }
+      models[shot.player.id].update(shot, dt);
+      models[shot.companion.id].update(shot.companionState(), dt);
+      for (const actor of shot.actors)
+        for (const role of ["TÚ", "IA"]) {
+          const label = labels[actor.id][role];
+          label.position.set(actor.x, 2.18, actor.z);
+          label.visible = (actor === shot.player) === (role === "TÚ");
+        }
+      companionMarker.position.set(shot.companion.x, 0.04, shot.companion.z);
       playerMarker.position.set(shot.player.x, 0.04, shot.player.z);
       playerMarker.material.opacity = shot.possession === "player" ? 0.9 : 0.2;
       companionMarker.material.opacity =

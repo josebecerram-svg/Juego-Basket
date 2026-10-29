@@ -255,10 +255,14 @@ export function createGym(scene) {
   instances(new T.BoxGeometry(0.52, 0.12, 0.57), seats);
   instances(new T.BoxGeometry(0.12, 0.38, 0.57), backs);
   const wall = material("#222e3b");
-  mesh(new T.BoxGeometry(0.25, 10, 40), wall, -15.5, 5, -8.2);
-  mesh(new T.BoxGeometry(0.25, 10, 40), wall, 15.5, 5, -8.2);
+  // Interior-facing surfaces avoid hiding the court when framing both players from outside the gym shell.
+  mesh(new T.PlaneGeometry(40, 10), wall, -15.5, 5, -8.2).rotation.y =
+    Math.PI / 2;
+  mesh(new T.PlaneGeometry(40, 10), wall, 15.5, 5, -8.2).rotation.y =
+    -Math.PI / 2;
   for (const z of [-26, 9.6]) {
-    mesh(new T.BoxGeometry(31, 10, 0.25), wall, 0, 5, z);
+    mesh(new T.PlaneGeometry(31, 10), wall, 0, 5, z).rotation.y =
+      z > 0 ? Math.PI : 0;
     mesh(
       new T.BoxGeometry(24, 0.18, 0.25),
       blue,
@@ -272,7 +276,7 @@ export function createGym(scene) {
   }
   const roof = mesh(
     new T.PlaneGeometry(32, 40),
-    material("#263441", { side: T.DoubleSide }),
+    material("#263441", { side: T.FrontSide }),
     0,
     10.2,
     -8.2,

@@ -5,43 +5,61 @@ import { config as c } from "../src/config.js";
 const advance = (s, seconds) => {
   for (let i = 0; i < seconds * 240; i++) s.step(1 / 240);
 };
-test("E pass has one ball, blocks extra passes/shots in air, catches and holds with companion, E returns to moving player", () => {
+test("control transfers only after catch; identities, input ownership, one ball and stats survive repeat passes", () => {
   const s = new Practice(),
-    ball = s.ball;
+    rivera = s.player,
+    silva = s.companion,
+    ball = s.ball,
+    riveraMovement = s.movement,
+    silvaMovement = s.companionMovement;
+  s.inputKeys.add("KeyW");
   assert.ok(s.requestPass());
-  assert.equal(s.power, 0);
-  assert.equal(s.requestPass(), false);
   advance(s, c.passing.preparation + 0.03);
   assert.equal(s.phase, "passing");
-  assert.equal(s.possession, "air");
-  const a = { ...s.ball };
-  advance(s, 0.1);
-  assert.notEqual(s.ball.x, a.x);
-  assert.ok(s.ball.y > 1.45);
+  assert.equal(s.player, rivera);
+  assert.equal(s.controlChanges, 0);
   assert.equal(s.requestPass(), false);
-  assert.match(s.notice, /no disponible/);
   assert.equal(s.charge(), false);
-  advance(s, 1.5);
-  assert.equal(s.possession, "companion");
-  assert.equal(s.phase, "companionHold");
-  const held = { ...s.ball };
-  advance(s, 0.5);
-  assert.equal(s.phase, "companionHold");
-  assert.ok(
-    Math.hypot(s.ball.x - s.companion.x, s.ball.z - s.companion.z) < 0.6,
-  );
-  assert.ok(s.requestPass());
-  advance(s, c.passing.preparation + 0.03);
-  s.player.x = 1;
-  s.player.z = -1;
-  advance(s, 1.5);
+  while (s.phase === "passing") s.step(1 / 240);
+  assert.equal(s.phase, "receive");
+  assert.equal(s.player, silva);
+  assert.equal(s.companion, rivera);
+  assert.equal(s.controlChanges, 1);
+  assert.equal(s.movement, silvaMovement);
+  assert.equal(s.companionMovement, riveraMovement);
+  assert.equal(s.movement.keys, s.inputKeys);
+  assert.equal(s.companionMovement.keys.size, 0);
+  assert.notEqual(s.companionMovement.keys, s.inputKeys);
+  assert.equal(s.movement.targetVelocity, null);
+  advance(s, 0.4);
   assert.equal(s.phase, "ready");
   assert.equal(s.possession, "player");
-  assert.deepEqual({ x: s.ball.x, y: s.ball.y, z: s.ball.z }, s.origin());
+  assert.ok(s.requestPass());
+  advance(s, 2);
+  assert.equal(s.player, rivera);
+  assert.equal(s.controlChanges, 2);
+  assert.equal(s.phase, "ready");
   assert.equal(s.stats.attempts, 0);
-  assert.equal(s.stats.points, 0);
   assert.equal(s.power, 0);
   assert.equal(s.ball, ball);
+});
+test("a missed pass keeps control with the sender and recovers without a phantom possession switch", () => {
+  const s = new Practice(),
+    sender = s.player;
+  s.requestPass();
+  advance(s, c.passing.preparation + 0.02);
+  s.companion.x = 6;
+  s.companion.z = -9;
+  while (s.phase === "passing") s.step(1 / 240);
+  assert.equal(s.phase, "passMiss");
+  assert.equal(s.player, sender);
+  assert.equal(s.controlChanges, 0);
+  assert.match(s.notice, /no recibido/);
+  assert.equal(s.requestPass(), false);
+  advance(s, 2);
+  assert.equal(s.phase, "ready");
+  assert.equal(s.player, sender);
+  assert.equal(s.possession, "player");
 });
 test("charging and shot flight reject passes; returned ball can still score", () => {
   const s = new Practice();

@@ -30,7 +30,7 @@ export function playerPose(shot) {
     shot.phase === "charging"
       ? Math.min(1, shot.time / 0.4)
       : shot.phase === "windup"
-        ? 1 - smooth(shot.time / c.windup)
+        ? (shot.launch.crouch ?? 1) * (1 - smooth(shot.time / c.windup))
         : 0;
   const follow = shot.phase === "flight" ? 1 - smooth(shot.time / 0.85) : 0;
   const crouch = charge * 0.09,
@@ -48,7 +48,7 @@ export function playerPose(shot) {
     crouch,
     sway,
     follow,
-    hip: 0.96 - crouch + sway - speed * 0.075,
+    hip: 0.96 - crouch + sway - speed * 0.085,
     hand:
       hand ??
       (shot.phase === "flight"

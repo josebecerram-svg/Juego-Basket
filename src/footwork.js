@@ -4,6 +4,10 @@ const smooth = (t) => {
   t = clamp(t);
   return t * t * (3 - 2 * t);
 };
+const smoother = (t) => {
+  t = clamp(t);
+  return t * t * t * (t * (t * 6 - 15) + 10);
+};
 const lerp = (a, b, t) => a + (b - a) * t;
 export class Footwork {
   constructor() {
@@ -25,6 +29,7 @@ export class Footwork {
       ) {
         foot.position = { ...home(foot), y: 0 };
         foot.yaw = yaw;
+        foot.pitch = 0;
         foot.swing = null;
       }
     }
@@ -62,9 +67,19 @@ export class Footwork {
             start: { ...foot.position },
             time: 0,
             duration: settle
-              ? 0.18
-              : 0.22 + 0.03 * (1 - Math.min(1, speed / 3.4)),
+              ? 0.2
+              : 0.215 +
+                0.035 * (1 - Math.min(1, speed / 3.4)) +
+                0.015 * (movement?.gait?.strafe ?? 0),
             settle,
+            target: { ...home(foot) },
+            startYaw: foot.yaw,
+            targetYaw: yaw,
+            lift: settle
+              ? 0.035
+              : 0.035 +
+                0.065 * (movement?.gait?.run ?? Math.min(1, speed / 3.4)) +
+                0.02 * (movement?.gait?.trot ?? 0),
           };
           this.nextFoot = 1 - index;
         }
@@ -75,20 +90,55 @@ export class Footwork {
       const swing = foot.swing;
       swing.time += dt;
       const t = clamp(swing.time / swing.duration),
-        s = smooth(t),
+        s = smoother(t),
         h = home(foot),
+        remaining = Math.max(0, swing.duration - swing.time),
         lead = swing.settle ? 0 : 0.11;
-      foot.position = {
-        x: lerp(swing.start.x, h.x + vx * lead, s),
-        y: Math.sin(Math.PI * t) * (swing.settle ? 0.045 : 0.105),
-        z: lerp(swing.start.z, h.z + vz * lead, s),
+      const ax = movement?.ax ?? 0,
+        az = movement?.az ?? 0;
+      const prediction = {
+        x:
+          h.x +
+          vx * (remaining + lead) +
+          ax * (0.5 * remaining * remaining + remaining * lead),
+        z:
+          h.z +
+          vz * (remaining + lead) +
+          az * (0.5 * remaining * remaining + remaining * lead),
       };
-      foot.yaw +=
-        Math.atan2(Math.sin(yaw - foot.yaw), Math.cos(yaw - foot.yaw)) *
-        Math.min(1, dt * 14);
+      if (swing.time <= dt) {
+        swing.target = prediction;
+        swing.targetYaw = yaw;
+      }
+      const correction =
+        (1 - smooth((t - 0.4) / 0.3)) * (1 - Math.exp(-dt * 15));
+      swing.target.x = lerp(swing.target.x, prediction.x, correction);
+      swing.target.z = lerp(swing.target.z, prediction.z, correction);
+      swing.targetYaw +=
+        Math.atan2(
+          Math.sin(yaw - swing.targetYaw),
+          Math.cos(yaw - swing.targetYaw),
+        ) * correction;
+      foot.position = {
+        x: lerp(swing.start.x, swing.target.x, s),
+        y: Math.sin(Math.PI * t) ** 2 * swing.lift,
+        z: lerp(swing.start.z, swing.target.z, s),
+      };
+      foot.yaw =
+        swing.startYaw +
+        Math.atan2(
+          Math.sin(swing.targetYaw - swing.startYaw),
+          Math.cos(swing.targetYaw - swing.startYaw),
+        ) *
+          s;
+      foot.pitch = Math.max(
+        -foot.position.y / 0.16,
+        Math.min(foot.position.y / 0.16, -0.16 * Math.sin(t * Math.PI * 2)),
+      );
       if (t === 1) {
         foot.position.y = 0;
-        foot.yaw = yaw;
+        foot.yaw = swing.targetYaw;
+        foot.pitch = 0;
         foot.swing = null;
       }
     }

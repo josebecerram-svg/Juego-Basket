@@ -5,7 +5,18 @@ const mix = (a, b, t) => a + (b - a) * t;
 export class Practice extends Shot {
   constructor() {
     super();
-    this.companion = { ...c.companion };
+    Object.assign(this.player, {
+      id: "rivera",
+      name: "RIVERA",
+      fullName: "Adrián Rivera",
+      number: "07",
+    });
+    this.companion = { ...c.companion, id: "silva", fullName: "Mateo Silva" };
+    this.actors = [this.player, this.companion];
+    this.inputKeys = new Set();
+    this.movement = new Movement(this.player);
+    this.movement.keys = this.inputKeys;
+    this.controlChanges = 0;
     this.companionMovement = new Movement(this.companion);
     this.companionMovement.bodyYaw =
       this.companionMovement.viewYaw =
@@ -56,11 +67,9 @@ export class Practice extends Shot {
         return { x: 0, y: 1.45, z: 0.3 + 0.12 * t, spread: 0 };
       }
     }
-    if (
-      (this.phase === "receive" && person === "player") ||
-      (this.phase === "companionHold" && person === "companion")
-    ) {
-      const t = Math.min(1, this.time / c.passing.catchTime);
+    if (this.phase === "receive" && person === "player") {
+      const v = Math.min(1, this.time / c.passing.catchTime),
+        t = v * v * (3 - 2 * v);
       return { x: 0.24 * t, y: 1.45 + 0.05 * t, z: 0.42 };
     }
     if (person === "companion") return empty;
@@ -94,7 +103,7 @@ export class Practice extends Shot {
   }
   charge() {
     if (this.possession !== "player")
-      return this.notify("Tiro no disponible: recupera el balón con E.");
+      return this.notify("Tiro no disponible: espera la recepción.");
     return super.charge();
   }
   release() {
@@ -103,9 +112,7 @@ export class Practice extends Shot {
     return ok;
   }
   requestPass() {
-    const available =
-      (this.phase === "ready" && this.possession === "player") ||
-      (this.phase === "companionHold" && this.time >= c.passing.catchTime);
+    const available = this.phase === "ready" && this.possession === "player";
     if (!available)
       return this.notify(
         this.phase === "charging"
@@ -119,8 +126,8 @@ export class Practice extends Shot {
       ) > c.passing.maxDistance
     )
       return this.notify("Acércate al compañero para pasar (máx. 12 m).");
-    const sender = this.possession,
-      receiver = sender === "player" ? "companion" : "player";
+    const sender = "player",
+      receiver = "companion";
     this.pass = { sender, receiver };
     this.phase = "passWindup";
     this.time = 0;
@@ -128,6 +135,35 @@ export class Practice extends Shot {
     this.notice = "";
     this.noticeTime = 0;
     return true;
+  }
+  completeReception() {
+    // Actor objects and their animation controllers keep their identities.
+    const oldPlayer = this.player,
+      oldMovement = this.movement;
+    oldMovement.keys = new Set();
+    oldMovement.facingTarget = undefined;
+    oldMovement.targetVelocity = { x: 0, z: 0 };
+    this.player = this.companion;
+    this.companion = oldPlayer;
+    this.movement = this.companionMovement;
+    this.companionMovement = oldMovement;
+    this.movement.keys = this.inputKeys;
+    this.movement.targetVelocity = null;
+    this.movement.facingTarget = undefined;
+    this.bodyYaw = this.movement.bodyYaw;
+    this.aim = { yaw: this.bodyYaw, angle: c.angle };
+    this.movement.yaw = this.bodyYaw;
+    this.supporting = false;
+    this.controlChanges++;
+    this.possession = "player";
+    this.phase = "receive";
+    this.time = 0;
+    this.power = 0;
+    this.pass.sender = "companion";
+    this.pass.receiver = "player";
+    this.notify(
+      "Ahora controlas a " + this.player.name + " · " + this.player.number,
+    );
   }
   updateCompanion(dt) {
     const m = this.companionMovement,
@@ -198,6 +234,7 @@ export class Practice extends Shot {
           start,
           duration: Math.max(0.45, Math.min(1.2, d / c.passing.speed)),
           arc: 0.18 + d * 0.035,
+          target,
         });
         this.phase = "passing";
         this.possession = "air";
@@ -208,22 +245,60 @@ export class Practice extends Shot {
     if (this.phase === "passing") {
       this.time += dt;
       const t = Math.min(1, this.time / this.pass.duration),
-        end = this.pointFor(this.pass.receiver, { x: 0, y: 1.45, z: 0.42 });
+        receiver = this.pointFor("companion", { x: 0, y: 1.45, z: 0.42 });
+      const correction = {
+        x: receiver.x - this.pass.target.x,
+        z: receiver.z - this.pass.target.z,
+      };
+      const len = Math.hypot(correction.x, correction.z),
+        assist = Math.min(1, c.passing.catchAssist / Math.max(0.001, len));
+      const end = {
+        x: this.pass.target.x + correction.x * assist,
+        y: receiver.y,
+        z: this.pass.target.z + correction.z * assist,
+      };
+      const previous = { ...this.ball };
       for (const a of ["x", "y", "z"])
         this.ball[a] = mix(this.pass.start[a], end[a], t);
       this.ball.y += 4 * this.pass.arc * t * (1 - t);
       if (t === 1) {
-        this.possession = this.pass.receiver;
-        this.phase = this.possession === "player" ? "receive" : "companionHold";
-        this.time = 0;
-        Object.assign(
-          this.ball,
-          this.pointFor(this.possession, this.handFor(this.possession)),
-        );
+        const caught =
+          Math.hypot(
+            this.ball.x - receiver.x,
+            this.ball.y - receiver.y,
+            this.ball.z - receiver.z,
+          ) <= c.passing.catchRadius;
+        if (caught) {
+          this.completeReception();
+          Object.assign(
+            this.ball,
+            this.pointFor("player", this.handFor("player")),
+          );
+        } else {
+          for (const a of ["x", "y", "z"])
+            this.ball["v" + a] = (this.ball[a] - previous[a]) / dt;
+          this.phase = "passMiss";
+          this.time = 0;
+          this.possession = "air";
+          this.notify("Pase no recibido · recuperando el balón");
+        }
       }
       return;
     }
-    if (["companionHold", "receive"].includes(this.phase)) {
+    if (this.phase === "passMiss") {
+      this.time += dt;
+      this.ball.vy -= c.gravity * dt;
+      for (const a of ["x", "y", "z"]) this.ball[a] += this.ball["v" + a] * dt;
+      if (this.ball.y < c.ballRadius) {
+        this.ball.y = c.ballRadius;
+        this.ball.vy = Math.abs(this.ball.vy) * 0.4;
+        this.ball.vx *= 0.95;
+        this.ball.vz *= 0.95;
+      }
+      if (this.time > 1.6) this.reset();
+      return;
+    }
+    if (this.phase === "receive") {
       this.time += dt;
       Object.assign(
         this.ball,
