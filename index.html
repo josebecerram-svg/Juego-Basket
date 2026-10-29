@@ -9,7 +9,7 @@
     <main>
       <header>
         <a class="brand" href="."
-          ><span>◉</span> BASKET<span class="tag">PROTOTIPO 02</span></a
+          ><span>◉</span> BASKET<span class="tag">PROTOTIPO 03</span></a
         ><span class="mode">● &nbsp; PRÁCTICA LIBRE</span>
       </header>
       <section class="intro">
@@ -25,7 +25,8 @@
           <span>01 / SESIÓN DE TIRO</span><span>TERCERA PERSONA · 3D</span>
         </div>
         <canvas
-          aria-label="Cancha 3D desde atrás del jugador. Arrastra para apuntar."
+          aria-label="Cancha de gimnasio 3D. WASD para moverte, mueve el mouse para apuntar y mantén clic izquierdo para cargar."
+          tabindex="0"
         ></canvas>
         <div class="feedback" role="status" aria-live="polite">
           Listo para lanzar
@@ -55,13 +56,17 @@
       <footer>
         <div>
           <span class="eyebrow">UN TIRO A LA VEZ</span>
-          <p id="hint">Apunta, mantén Lanzar y suelta para tirar.</p>
+          <p id="hint">
+            WASD para moverte · Mouse para apuntar · Mantén clic izquierdo y
+            suelta.
+          </p>
         </div>
         <button id="shoot">Lanzar <span>↗</span></button>
       </footer>
       <p class="note">
-        Arrastra la cancha o usa los deslizadores para apuntar · Mantén Lanzar
-        para cargar · El balón vuelve a tus manos después de cada intento.
+        Mueve el mouse sobre la cancha para apuntar · Mantén clic izquierdo o
+        Lanzar y suelta para tirar · Sin captura del cursor · El balón vuelve
+        automáticamente a tus manos.
       </p>
     </main>
     <script type="module" src="src/main.js"></script>

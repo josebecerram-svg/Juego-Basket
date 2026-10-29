@@ -112,3 +112,35 @@ test("charge caps, cancellation permits retry, direction and elevation change ve
   s.step(c.windup);
   assert.ok(s.ball.vy > vy);
 });
+
+test("moving origin follows player and direction, flight remains independent, reset returns to new position", () => {
+  const s = new Shot();
+  s.player.x = 2;
+  s.player.z = -3;
+  s.aim.yaw = Math.PI / 2;
+  s.step(0.01);
+  assert.ok(Math.abs(s.ball.x - 2.38) < 1e-8);
+  assert.ok(Math.abs(s.ball.z + 3) < 1e-8);
+  s.charge();
+  s.power = 0.4;
+  s.release();
+  s.step(c.windup);
+  const start = { ...s.ball };
+  s.player.x = -2;
+  s.step(0.01);
+  assert.ok(s.ball.x > start.x);
+  assert.equal(s.ball.z, start.z);
+  s.reset();
+  assert.ok(Math.abs(s.ball.x + 1.62) < 1e-8);
+  assert.equal(s.player.x, -2);
+});
+
+test("opposite basket also scores from a reversed shot", () => {
+  const s = new Shot();
+  s.player.z = -16.02;
+  s.aim.yaw = Math.PI;
+  s.charge();
+  s.power = 0.4167;
+  s.release();
+  assert.equal(run(s).result, "¡Canasta!");
+});

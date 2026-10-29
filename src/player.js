@@ -21,8 +21,11 @@ export function createPlayer(scene) {
   part(new T.CylinderGeometry(0.24, 0.2, 0.62, 12), shirt, 0, 1.18, 0);
   part(new T.BoxGeometry(0.44, 0.28, 0.28), shorts, 0, 0.77, 0);
   part(new T.SphereGeometry(0.18, 16, 12), skin, 0, 1.76, 0);
+  const legs = [];
   for (const x of [-0.14, 0.14]) {
-    part(new T.CylinderGeometry(0.08, 0.09, 0.55, 10), skin, x, 0.4, 0);
+    legs.push(
+      part(new T.CylinderGeometry(0.08, 0.09, 0.55, 10), skin, x, 0.4, 0),
+    );
     part(new T.BoxGeometry(0.18, 0.12, 0.33), shoe, x, 0.09, 0.06);
   }
   const arms = [-1, 1].map((side) => ({
@@ -41,21 +44,25 @@ export function createPlayer(scene) {
   }
   return {
     update(shot) {
-      // The body stays planted; the arms meet the held ball in world space.
+      group.position.set(shot.player.x, 0, shot.player.z);
+      group.rotation.y =
+        shot.phase === "windup" ? shot.launch.yaw : shot.aim.yaw;
       const follow =
         shot.phase === "flight"
           ? Math.max(0, 1 - shot.time * 2)
           : shot.phase === "windup"
             ? shot.time / c.windup
             : 0;
+      const stride = shot.movement
+        ? Math.sin(shot.movement.distance * 7) *
+          Math.min(1, Math.hypot(shot.movement.vx, shot.movement.vz)) *
+          0.22
+        : 0;
+      legs.forEach((leg, i) => (leg.rotation.x = (i ? 1 : -1) * stride));
       for (const { side, upper, lower } of arms) {
         const shoulder = new T.Vector3(side * 0.25, 1.42, 0);
         const elbow = new T.Vector3(side * 0.3, 1.67 + follow * 0.16, 0.24);
-        const hand = new T.Vector3(
-          side * 0.08,
-          2.04 + follow * 0.05,
-          -c.player.z - 0.02,
-        );
+        const hand = new T.Vector3(side * 0.08, 2.04 + follow * 0.05, 0.36);
         segment(upper, shoulder, elbow);
         segment(lower, elbow, hand);
       }

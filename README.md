@@ -1,34 +1,41 @@
-# Basket · prototipo 02 · 3D
+# Basket · prototipo 03 · Gimnasio 3D
 
-Práctica de tiro en tercera persona con Three.js, cámara detrás y a un lado del jugador y física 3D a paso fijo. Paleta y modelos provisionales. Un jugador quieto, un balón y un aro.
+Práctica de tiro en tercera persona con Three.js. Cancha interior de 15 × 28 m, parquet claro generado por código, zonas azules, líneas, dos tableros y aros a 3,05 m y graderías oscuras. La escena se construye con geometría 3D; no contiene una fotografía como fondo.
 
-## Abrir
+## Iniciar
 
-La versión publicada en GitHub Pages usa directamente `index.html`, `src/` y `vendor/`; no necesita compilación ni CDN. Para ejecutarlo en tu computador, con los archivos descargados y Node.js >=18: ejecuta `npm run dev` desde la carpeta del proyecto y abre `http://localhost:5173` en esa misma máquina. El navegador necesita WebGL 2. En la nube, localhost solo funciona dentro de la máquina remota.
+En GitHub Pages: https://josebecerram-svg.github.io/Juego-Basket/ . Las actualizaciones pueden tardar unos minutos; si ves una versión anterior, recarga sin caché.
+
+Para desarrollo local: Node.js >=18, `npm run dev` en la carpeta del proyecto, y `http://localhost:5173` en esa misma máquina. No requiere instalación npm ni compilación. En un entorno remoto, localhost solo está disponible dentro de esa máquina. Requiere navegador con WebGL 2.
 
 ## Controles
 
-- Arrastra sobre la cancha con mouse o dedo para ajustar dirección horizontal y elevación. También puedes usar los deslizadores **Dirección** y **Ángulo**.
-- Mantén presionado **Lanzar** para cargar de 0 a 100 % en 1,6 segundos; suéltalo para tirar. La carga permanece al máximo si continúas manteniendo el botón. La línea muestra la trayectoria prevista sin colisiones; antes de cargar representa una potencia orientativa del 42 %.
-- El medidor muestra la potencia actual. Como referencia para practicar, dirección 0°, ángulo 55° y potencia cercana al 42 % permiten encestar; cargar menos queda corto y cargar mucho puede sobrepasar el aro.
-- Espera a que termine el movimiento del balón: aparecerá **¡Canasta!** o **Fallaste**, y regresará a tus manos. Solo hay un balón y no se puede iniciar otro tiro durante un intento.
-- El botón también admite mantener y soltar Espacio/Enter cuando tiene el foco, como comportamiento accesible del propio botón. No hay atajos globales ni teclas de movimiento.
+- **W:** avanzar hacia donde mira el personaje. **S:** retroceder. **A/D:** desplazarse a izquierda/derecha respecto a esa orientación. El movimiento tiene aceleración, diagonales normalizadas y límites en las líneas de la cancha.
+- **Mueve el mouse sobre la cancha:** ajusta directamente la dirección y la elevación. El cuerpo gira y la cámara acompaña suavemente desde atrás, por encima y ligeramente a un lado. El encuadre se adapta para incluir el aro cercano, el cuerpo y el balón en vuelo.
+- **Mantén clic izquierdo sobre la cancha:** carga potencia. **Suéltalo:** animación y lanzamiento. La carga llega al máximo en 1,6 segundos y se mantiene allí. No se necesita capturar ni bloquear el mouse; puedes salir de la cancha y usar la interfaz normalmente.
+- También puedes ajustar **Dirección/Ángulo** con los deslizadores y mantener/soltar **Lanzar**, utilizable con mouse o pantalla táctil. El botón admite Espacio/Enter cuando tiene el foco.
+- WASD no intercepta escritura ni controles cuando un campo o botón tiene el foco. Haz clic en la cancha para volver a controlarla. Al cambiar de ventana se cancelan la carga y las teclas retenidas.
+- Solo hay un balón. Puedes caminar durante la carga y el vuelo; la posición se fija durante los 0,28 segundos de preparación para soltar el balón desde las manos. Al terminar el intento aparece **¡Canasta!** o **Fallaste**, y el balón vuelve automáticamente a la posición actual del jugador. No hace falta perseguirlo.
 
-## Parámetros y módulos
+Desde la posición inicial, **dirección 0°, ángulo 55° y potencia cercana al 42 %** permiten practicar una canasta. Al moverte, tendrás que ajustar dirección y potencia. La guía es orientativa: muestra una parábola ideal sin rebotes y, antes de cargar, representa una potencia de referencia del 42 %.
 
-`src/config.js` centraliza `minForce`/`maxForce` (4,8–10,8 m/s), `chargeSeconds`, gravedad, posición inicial, radios y restitución. Dirección: −25° a +25° respecto al aro. Elevación: 40° a 70°. Internamente los ángulos se expresan en radianes. Los límites se definen en `config.js` y `controls.js` los aplica a los deslizadores.
+## Organización y ajustes
 
-- `physics.js`: velocidad tridimensional, estados, colisiones esfera/suelo, tablero finito y aro toroidal; detección descendente dentro de la abertura, una vez por tiro y antes de tocar el suelo.
-- `camera.js`: perspectiva de tercera persona y encuadre adaptable, anclado a la posición fija del jugador.
-- `player.js`: cuerpo y brazos articulados; manos en el punto de salida.
-- `scene.js`: modelos 3D, iluminación, guía y renderizado.
-- `controls.js`: puntería, carga, cancelación y controles de pantalla.
-- `main.js`: integración a 240 Hz, interfaz y renderizado.
+- `src/config.js`: gravedad, fuerza mínima/máxima, carga, elevación, posición inicial, límites de cancha, velocidad/aceleración y asignación WASD configurable.
+- `movement.js`: movimiento relativo a la orientación del jugador y contención dentro de la cancha.
+- `physics.js`: balón en manos, carga, suelta desde una posición dinámica, trayectoria 3D, colisiones con ambos tableros y aros y suelo. La canasta exige un cruce descendente dentro de la abertura, antes del primer contacto con el suelo, una sola vez por intento.
+- `camera.js`: seguimiento en tercera persona y ajuste de encuadre, sin cámara desde los ojos.
+- `gym.js`: parquet procedural, pintura, líneas, canastas, gradas e iluminación interior.
+- `player.js`: personaje, giro, brazos y animación básica de piernas.
+- `controls.js`: teclado, apuntado directo, clic izquierdo y controles alternativos.
+- `scene.js` / `main.js`: renderizado y bucle físico a 240 Hz.
 
 ## Validación
 
-`npm test` comprueba tiros corto, largo, lateral y canasta, tres intentos consecutivos, salida desde las manos, exclusión de tiros simultáneos, rebotes en suelo/tablero/aro, dirección del cruce y carga/cancelación.
+`npm test` ejecuta pruebas de WASD, diagonales, límites y frenado; posición dinámica de salida; tiros corto, largo y lateral; canastas, intentos consecutivos y exclusión de tiros simultáneos; colisiones con suelo/tablero/aro; y encuadre de cámara en escritorio/móvil en distintas posiciones y orientaciones.
+
+También se comprueba en Chromium el movimiento con teclas reales, apuntado con mouse, carga/suelta de clic izquierdo, aciertos/fallos y respeto del foco de la interfaz.
 
 ## Límites
 
-Física simplificada, sin simulación de tela para la red ni colisiones con el cuerpo. Modelos geométricos provisionales. Cámara fija de tercera persona, sin desplazamientos ni órbita libre. Sin rivales ni modos adicionales. La guía ignora rebotes y usa una curva ideal; el resultado real se calcula con integración y colisiones. Los intentos terminan al quedar casi inmóvil el balón o a los seis segundos. Three.js 0.170.0 se incluye localmente con su licencia MIT en `vendor/`.
+Física y personaje simplificados; red decorativa y sin colisiones con el cuerpo, gradas o paredes. No hay recogida manual: recuperación automática. Movimiento para teclado; móvil conserva puntería y lanzamiento táctiles, sin joystick de desplazamiento. No hay historia, rivales, trucos ni modos multijugador. Three.js 0.170.0 se incluye localmente con su licencia MIT en `vendor/`.

@@ -10,12 +10,23 @@ export function velocity(power, yaw = 0, angle = c.angle) {
 }
 export class Shot {
   constructor() {
+    this.player = { ...c.player };
     this.aim = { yaw: 0, angle: c.angle };
     this.reset();
   }
+  origin() {
+    return {
+      x: this.player.x + Math.sin(this.aim.yaw) * 0.38,
+      y: c.initial.y,
+      z: this.player.z + Math.cos(this.aim.yaw) * 0.38,
+    };
+  }
+  hold() {
+    Object.assign(this.ball, this.origin());
+  }
   reset() {
     this.phase = "ready";
-    this.ball = { ...c.initial, vx: 0, vy: 0, vz: 0 };
+    this.ball = { ...this.origin(), vx: 0, vy: 0, vz: 0 };
     this.time = 0;
     this.power = 0;
     this.scored = false;
@@ -31,7 +42,7 @@ export class Shot {
   }
   release() {
     if (this.phase !== "charging") return false;
-    this.launch = { power: this.power, ...this.aim };
+    this.launch = { power: this.power, ...this.aim, origin: this.origin() };
     this.phase = "windup";
     this.time = 0;
     return true;
@@ -41,6 +52,7 @@ export class Shot {
   }
   step(dt) {
     this.time += dt;
+    if (["ready", "charging"].includes(this.phase)) this.hold();
     if (this.phase === "charging") {
       this.power = Math.min(1, this.time / c.chargeSeconds);
       return;
@@ -50,7 +62,7 @@ export class Shot {
         this.phase = "flight";
         this.time = 0;
         this.ball = {
-          ...c.initial,
+          ...this.launch.origin,
           ...velocity(this.launch.power, this.launch.yaw, this.launch.angle),
         };
       }
@@ -63,51 +75,58 @@ export class Shot {
     if (this.phase !== "flight") return;
     const b = this.ball,
       p = { ...b },
-      r = c.ballRadius,
-      h = c.hoop;
+      r = c.ballRadius;
     b.vy -= c.gravity * dt;
     for (const a of ["x", "y", "z"]) b[a] += b["v" + a] * dt;
-    const face = c.board.z + (b.vz > 0 ? -r : r);
-    if (
-      Math.abs(b.x) < c.board.halfWidth + r &&
-      b.y + r > c.board.bottom &&
-      b.y - r < c.board.top &&
-      (p.z - face) * (b.z - face) <= 0 &&
-      b.vz !== 0
-    ) {
-      b.z = face;
-      b.vz *= -c.restitution;
-      this.contacts.add("board");
-    }
-    // Closest point on the horizontal ring: a sphere against a torus in 3D.
-    const dx = b.x - h.x,
-      dz = b.z - h.z,
-      rho = Math.hypot(dx, dz);
-    if (rho > 0) {
-      const qx = h.x + (dx / rho) * h.radius,
-        qz = h.z + (dz / rho) * h.radius,
-        nx = b.x - qx,
-        ny = b.y - h.y,
-        nz = b.z - qz,
-        d = Math.hypot(nx, ny, nz),
-        rr = r + h.tube;
-      if (d > 0 && d < rr) {
-        const n = { x: nx / d, y: ny / d, z: nz / d },
-          dot = b.vx * n.x + b.vy * n.y + b.vz * n.z;
-        for (const a of ["x", "y", "z"]) {
-          b[a] += n[a] * (rr - d);
-          if (dot < 0) b["v" + a] -= (1 + c.restitution) * dot * n[a];
-        }
-        this.contacts.add("rim");
-      }
-    }
-    if (!this.scored && !this.grounded && p.y > h.y && b.y <= h.y && b.vy < 0) {
-      const t = (p.y - h.y) / (p.y - b.y);
+    for (const { hoop: h, board } of c.baskets) {
+      const face = board.z + (b.vz > 0 ? -r : r);
       if (
-        Math.hypot(p.x + (b.x - p.x) * t - h.x, p.z + (b.z - p.z) * t - h.z) <
-        h.radius - r
+        Math.abs(b.x) < board.halfWidth + r &&
+        b.y + r > board.bottom &&
+        b.y - r < board.top &&
+        (p.z - face) * (b.z - face) <= 0 &&
+        b.vz !== 0
       ) {
-        this.scored = true;
+        b.z = face;
+        b.vz *= -c.restitution;
+        this.contacts.add("board");
+      }
+      // Closest point on the horizontal ring: a sphere against a torus in 3D.
+      const dx = b.x - h.x,
+        dz = b.z - h.z,
+        rho = Math.hypot(dx, dz);
+      if (rho > 0) {
+        const qx = h.x + (dx / rho) * h.radius,
+          qz = h.z + (dz / rho) * h.radius,
+          nx = b.x - qx,
+          ny = b.y - h.y,
+          nz = b.z - qz,
+          d = Math.hypot(nx, ny, nz),
+          rr = r + h.tube;
+        if (d > 0 && d < rr) {
+          const n = { x: nx / d, y: ny / d, z: nz / d },
+            dot = b.vx * n.x + b.vy * n.y + b.vz * n.z;
+          for (const a of ["x", "y", "z"]) {
+            b[a] += n[a] * (rr - d);
+            if (dot < 0) b["v" + a] -= (1 + c.restitution) * dot * n[a];
+          }
+          this.contacts.add("rim");
+        }
+      }
+      if (
+        !this.scored &&
+        !this.grounded &&
+        p.y > h.y &&
+        b.y <= h.y &&
+        b.vy < 0
+      ) {
+        const t = (p.y - h.y) / (p.y - b.y);
+        if (
+          Math.hypot(p.x + (b.x - p.x) * t - h.x, p.z + (b.z - p.z) * t - h.z) <
+          h.radius - r
+        ) {
+          this.scored = true;
+        }
       }
     }
     if (b.y < r) {
