@@ -739,3 +739,48 @@ canvas:focus-visible {
     font-size: 7px;
   }
 }
+.target-cue {
+  right: 20px;
+  top: 65px;
+  display: grid;
+  grid-template-columns: 24px auto;
+  column-gap: 8px;
+  align-items: center;
+  background: #10202be8;
+  border-left: 2px solid var(--lime);
+  padding: 9px 12px;
+  max-width: 155px;
+}
+.target-cue[hidden] {
+  display: none;
+}
+.target-cue svg {
+  width: 22px;
+  height: 22px;
+  color: var(--lime);
+  grid-row: span 2;
+}
+.target-cue strong {
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.target-cue > span {
+  font-size: 6px;
+  color: #a4b7bd;
+  letter-spacing: 0.8px;
+  margin-top: 4px;
+}
+@media (max-width: 700px) {
+  .target-cue {
+    right: 10px;
+    top: 47px;
+    padding: 7px;
+    max-width: 113px;
+  }
+  .target-cue > span {
+    font-size: 5px;
+  }
+  .target-cue strong {
+    font-size: 8px;
+  }
+}

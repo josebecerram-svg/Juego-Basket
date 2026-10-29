@@ -8,6 +8,7 @@ export function createScene(canvas) {
   const renderer = new T.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = T.PCFSoftShadowMap;
   renderer.toneMapping = T.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.1;
   const scene = new T.Scene();
@@ -17,6 +18,7 @@ export function createScene(canvas) {
   const light = new T.DirectionalLight("#fff2d6", 1.3);
   light.position.set(-4, 10, -2);
   light.castShadow = true;
+  light.shadow.radius = 3;
   Object.assign(light.shadow.camera, {
     left: -12,
     right: 12,
@@ -46,7 +48,7 @@ export function createScene(canvas) {
     scene.add(o);
     return o;
   }
-  createGym(scene);
+  const cameraObstacles = createGym(scene);
   const ball = mesh(
     new T.SphereGeometry(c.ballRadius, 24, 16),
     mat("#ed9953"),
@@ -118,7 +120,16 @@ export function createScene(canvas) {
       labels[id][role] = label;
     }
   }
-  const rig = createCamera();
+  const rig = createCamera({ obstacles: cameraObstacles });
+  const directionArrow = new T.ArrowHelper(
+    new T.Vector3(0, 0, 1),
+    new T.Vector3(),
+    1.35,
+    0xd5ff5f,
+    0.22,
+    0.12,
+  );
+  scene.add(directionArrow);
   const guide = line([], "#dbef95");
   guide.material.transparent = true;
   guide.material.opacity = 0.6;
@@ -148,6 +159,19 @@ export function createScene(canvas) {
           : shot.phase === "passing"
             ? dt * 9
             : 0;
+      directionArrow.position.set(
+        shot.player.x +
+          Math.cos(shot.aimYaw()) * 0.45 +
+          Math.sin(shot.aimYaw()) * 0.4,
+        0.055,
+        shot.player.z -
+          Math.sin(shot.aimYaw()) * 0.45 +
+          Math.cos(shot.aimYaw()) * 0.4,
+      );
+      directionArrow.setDirection(
+        new T.Vector3(Math.sin(shot.aimYaw()), 0, Math.cos(shot.aimYaw())),
+      );
+      directionArrow.visible = ["ready", "charging"].includes(shot.phase);
       guide.visible = ["ready", "charging"].includes(shot.phase);
       if (guide.visible) {
         const v = velocity(
@@ -171,6 +195,29 @@ export function createScene(canvas) {
         guide.geometry = new T.BufferGeometry().setFromPoints(pts);
       }
       renderer.render(scene, rig.camera);
+      const cue = document.querySelector("#target-cue");
+      if (cue) {
+        const hoop = shot.targetHoop ?? c.hoop;
+        let target = { x: hoop.x, y: hoop.y, z: hoop.z },
+          name = "ARO";
+        if (["flight", "passing", "passMiss"].includes(shot.phase)) {
+          target = shot.ball;
+          name = "BALÓN";
+        }
+        const projected = new T.Vector3(target.x, target.y, target.z).project(
+          rig.camera,
+        );
+        const visible =
+          Math.abs(projected.x) < 0.92 &&
+          Math.abs(projected.y) < 0.9 &&
+          projected.z < 1;
+        cue.hidden = visible;
+        cue.querySelector("strong").textContent = name;
+        const sign = projected.z > 1 ? -1 : 1;
+        const angle = Math.atan2(projected.y * sign, projected.x * sign);
+        cue.querySelector("svg").style.transform =
+          `rotate(${(-angle * 180) / Math.PI}deg)`;
+      }
     },
   };
 }

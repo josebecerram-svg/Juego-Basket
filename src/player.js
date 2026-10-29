@@ -19,6 +19,27 @@ export function createPlayer(
     trim = mat("#4d8ba5"),
     sole = mat("#c5cccf"),
     black = mat("#222a2f");
+  const fabric = document.createElement("canvas");
+  fabric.width = fabric.height = 128;
+  const fabricContext = fabric.getContext("2d");
+  fabricContext.fillStyle = "#edf1ec";
+  fabricContext.fillRect(0, 0, 128, 128);
+  fabricContext.strokeStyle = "rgba(45,69,77,.06)";
+  fabricContext.lineWidth = 1;
+  for (let i = 0; i < 128; i += 4) {
+    fabricContext.beginPath();
+    fabricContext.moveTo(i, 0);
+    fabricContext.lineTo(i, 128);
+    fabricContext.moveTo(0, i);
+    fabricContext.lineTo(128, i);
+    fabricContext.stroke();
+  }
+  const fabricTexture = new T.CanvasTexture(fabric);
+  fabricTexture.colorSpace = T.SRGBColorSpace;
+  fabricTexture.wrapS = fabricTexture.wrapT = T.RepeatWrapping;
+  fabricTexture.repeat.set(3, 5);
+  const jersey = mat("#ffffff", 0.88);
+  jersey.map = fabricTexture;
   function add(parent, g, m, x = 0, y = 0, z = 0) {
     const o = new T.Mesh(g, m);
     o.position.set(x, y, z);
@@ -58,7 +79,7 @@ export function createPlayer(
       ].map(([x, y]) => new T.Vector2(x, y)),
       32,
     ),
-    white,
+    jersey,
   );
   torso.scale.z = 0.68;
   // Sleeveless jersey with a separate collar, piping and printed fabric panels.
@@ -298,6 +319,8 @@ export function createPlayer(
       const leanZ =
         (-(motion?.lateral ?? 0) / c.movement.speed) * 0.05 -
         accelerationSide * 0.007;
+      const counterTurn = -(motion?.bodyTurnVelocity ?? 0) * 0.012;
+      body.rotation.y += (counterTurn - body.rotation.y) * blend;
       body.rotation.x += (leanX - body.rotation.x) * blend;
       body.rotation.z += (leanZ - body.rotation.z) * blend;
       const lookingAtPass =

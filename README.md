@@ -1,4 +1,4 @@
-# Baseline · prototipo 06 · Locomoción continua y cambio de control
+# Baseline · prototipo 07 · Cámara cercana y presentación de cancha
 
 Práctica de tiros y pases en tercera persona con Three.js, con Rivera (07) y Silva (12). Controlas a quien recibe el pase; el otro jugador actúa como compañero de apoyo de la computadora. Cancha interior de 15 × 28 m, parquet claro generado por código, zonas azules, líneas, dos tableros y aros a 3,05 m y graderías oscuras. La escena se construye con geometría 3D; no contiene una fotografía como fondo.
 
@@ -11,7 +11,7 @@ Para desarrollo local: Node.js >=18, `npm run dev` en la carpeta del proyecto, y
 ## Controles
 
 - **W:** avanzar hacia donde mira el personaje. **S:** retroceder. **A/D:** desplazarse a izquierda/derecha respecto a esa orientación. El movimiento limita aceleración, frenado y variación de aceleración, con giros progresivos y diagonales normalizadas. Mantener WASD mezcla caminar, trotar y correr sin añadir teclas; los desplazamientos laterales y hacia atrás conservan un ritmo más corto y controlado. Se mantienen los límites de la cancha. El cuerpo acompaña la velocidad lateral y de retroceso; los pies mantienen puntos de apoyo en el mundo y alternan las zancadas.
-- **Mueve el mouse sobre la cancha:** ajusta directamente la dirección y la elevación. El cuerpo gira y la cámara acompaña suavemente desde atrás, por encima y ligeramente a un lado. El encuadre se adapta para incluir el aro cercano, el cuerpo y el balón en vuelo.
+- **Mueve el mouse sobre la cancha:** ajusta directamente la dirección y la elevación. El cuerpo gira y la cámara acompaña suavemente desde atrás, por encima y ligeramente a un lado. La cámara cercana acompaña desde atrás y prioriza el cuerpo completo del jugador controlado; el aro y el balón se ven cuando quedan dentro del campo visual. Si salen de vista, un indicador orienta hacia ellos.
 - **Mantén clic izquierdo sobre la cancha:** carga potencia. **Suéltalo:** animación y lanzamiento. La carga llega al máximo en 1,6 segundos y se mantiene allí. No se necesita capturar ni bloquear el mouse; puedes salir de la cancha y usar la interfaz normalmente.
 - También puedes ajustar **Dirección/Ángulo** con los deslizadores y mantener/soltar **Lanzar**, utilizable con mouse o pantalla táctil. La potencia se carga solo al mantener el botón izquierdo sobre la cancha o **Lanzar** (también mediante una pulsación táctil sostenida), nunca con E.
 - WASD no intercepta escritura ni controles cuando un campo o botón tiene el foco. Haz clic en la cancha para volver a controlarla. Al cambiar de ventana se cancelan la carga y las teclas retenidas.
@@ -30,11 +30,21 @@ Desde la posición inicial, **dirección 0°, ángulo 55° y potencia cercana al
 - No puedes pasar durante un tiro, una carga, otro pase o la recepción; aparece un aviso breve. Mantener E no encadena pases.
 - El compañero se recoloca cuando te alejas demasiado o te acercas mucho. El alcance máximo de pase es 12 m.
 
+## Cámara cercana y presentación
+
+La cámara parte a unos **4,6 m detrás** del jugador, a **3 m de altura**, ligeramente a un lado. Sigue desplazamientos, giros y cambios de control mediante amortiguación; no se aleja para encuadrar obligatoriamente a todo el equipo o a un aro que esté detrás. Durante tiros altos puede retroceder ligeramente. La flecha sobre el suelo y la parábola indican la dirección real del lanzamiento, respetando el giro gradual del cuerpo.
+
+Una comprobación de volumen evita que la cámara atraviese tableros, soportes, graderías, paredes o al compañero. Puede acercarse o desplazarse hacia un lado ante un obstáculo, manteniendo una separación de seguridad y la altura por encima de la cabeza. No se cambia a primera persona. Los parámetros están centralizados en `config.camera`.
+
+La ambientación sigue siendo original de Baseline: parquet claro con respuesta de barniz, pintura azul, graderías oscuras, iluminación de gimnasio y sombras suaves. Las camisetas incorporan un tejido procedural fino. Los pasos anticipan los giros y el torso contrarresta la rotación de manera gradual; se conservan los modelos humanos, ritmos de caminar/trotar/correr, apoyos e identidad visual propios.
+
+Los pases, tiros y el cambio automático al receptor no se rediseñan en esta etapa. No se añaden movimientos especiales ni combinaciones. Los movimientos especiales y los diseños futuros de pase/tiro siguen pendientes de instrucciones específicas; el acabado anatómico y las animaciones continúan siendo procedurales, sin captura de movimiento.
+
 ## Jugador e interfaz
 
 Adrián Rivera (07) y Mateo Silva (12): modelos humanos procedurales con proporciones anatómicas, rostro, manos, camiseta sin mangas con nombre y dorsal, pantalón, calcetines y zapatillas con suela y cordones. Animaciones articuladas de carrera y frenado, giro al apuntar, flexión de rodillas y elevación del balón al cargar, extensión y gesto de muñeca al soltar. El balón pasa de una posición de preparación al lado del pecho a la posición de salida sobre la cabeza.
 
-La interfaz original **Baseline** integra el marcador arriba a la izquierda y el nombre y potencia abajo a la izquierda. El nombre y dorsal corresponden siempre al jugador controlado. La cámara reserva espacio para los paneles. Cada canasta suma **2 puntos**, una sola vez, inmediatamente al cruzar el aro. El marcador muestra canastas e intentos y conserva el último resultado al recuperar el balón. Los datos duran la sesión actual; recargar la página inicia una práctica nueva.
+La interfaz original **Baseline** integra el marcador arriba a la izquierda y el nombre y potencia abajo a la izquierda. El nombre y dorsal corresponden siempre al jugador controlado. El encuadre inicial reserva espacio para los paneles y un aviso discreto ayuda a localizar el balón o el aro fuera de vista. Cada canasta suma **2 puntos**, una sola vez, inmediatamente al cruzar el aro. El marcador muestra canastas e intentos y conserva el último resultado al recuperar el balón. Los datos duran la sesión actual; recargar la página inicia una práctica nueva.
 
 La potencia es azul en la zona baja, verde lima en la zona ideal y coral en la zona excesiva. La banda ideal se adapta a distancia y elevación; es orientativa y no corrige el apuntado ni garantiza encestar. Al soltar, valor y referencia de potencia quedan fijados hasta que termina el intento. **Ajustes de apuntado** despliega los controles alternativos de dirección/elevación.
 
@@ -45,7 +55,7 @@ La potencia es azul en la zona baja, verde lima en la zona ideal y coral en la z
 - `footwork.js`: apoyo fijo en el mundo, duración/elevación adaptada al ritmo, curva de pie con llegada suave a una posición de contacto estable, recolocación al detenerse y pasos de giro. Las piernas usan cinemática inversa.
 - `practice.js`: actores con identidad estable, transferencia exclusiva de entrada al recibir, compañero de apoyo, vuelo asistido limitado, comprobación de recepción y recuperación de pases fallidos.
 - `physics.js`: balón en manos, carga, suelta desde una posición dinámica, trayectoria 3D, colisiones con ambos tableros y aros y suelo. La canasta exige un cruce descendente dentro de la abertura, antes del primer contacto con el suelo, una sola vez por intento.
-- `camera.js`: seguimiento en tercera persona y ajuste de encuadre, sin cámara desde los ojos.
+- `camera.js`: seguimiento cercano desde atrás, amortiguación de posición/giro/altura, volumen de seguridad y alternativas de hombro frente a obstáculos. Prioriza al controlado y evita el zoom panorámico.
 - `gym.js`: parquet procedural, pintura, líneas, canastas, gradas e iluminación interior.
 - `player.js`: modelo anatómico, equipación y articulaciones; brazos con cinemática inversa para mantener las manos en el balón.
 - `pose.js`: preparación, carga, lanzamiento y transición de la postura al correr y detenerse. Comparte la posición del balón con la física.
@@ -55,7 +65,7 @@ La potencia es azul en la zona baja, verde lima en la zona ideal y coral en la z
 
 ## Validación
 
-`npm test` ejecuta pruebas de WASD, diagonales, límites y frenado; posición dinámica de salida; tiros corto, largo y lateral; canastas, intentos consecutivos y exclusión de tiros simultáneos; colisiones con suelo/tablero/aro; y encuadre de cámara en escritorio/móvil en distintas posiciones y orientaciones.
+`npm test` ejecuta pruebas de WASD, diagonales, límites y frenado; posición dinámica de salida; tiros corto, largo y lateral; canastas, intentos consecutivos y exclusión de tiros simultáneos; colisiones con suelo/tablero/aro; y cámara cercana en escritorio/móvil: cuerpo visible, distancia, posición detrás y por encima, barrido contra obstáculos y continuidad durante el cambio de control.
 
 Las pruebas cubren continuidad de aceleración y giro, mezcla de ritmos, apoyo sin deslizamiento y llegada suave del pie. Se verifica que no cambie el control antes de recibir, que el receptor herede únicamente la entrada activa, que el pasador sea IA y que un fallo no transfiera control. En Chromium se prueban WASD, E, ambos cambios de jugador, nombres de la interfaz, tiro y canasta con Silva, conservación del marcador y recuperación de un pase fallido. También se revisan caminata, trote, carrera, lateral, retroceso, frenada y giro.
 
@@ -65,6 +75,6 @@ Modelo humano procedural estilizado, sin escaneo fotográfico ni captura de movi
 
 ## Publicación y caché
 
-La versión **06.1** incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible.
+La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **07**.
 
 Después de modificar archivos, ejecuta `npm run version:assets` y luego `npm test` antes de subir a `main`. `npm run dev` actualiza automáticamente las versiones al arrancar. La comprobación de pruebas detecta recursos modificados sin actualizar su identificador. GitHub Pages sigue publicando desde la raíz de `main`, sin compilación externa. Para una primera carga después de una actualización, añade `?release=IDENTIFICADOR` a la URL del juego; esto renueva el documento HTML además de sus módulos.

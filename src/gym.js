@@ -39,9 +39,16 @@ function parquet() {
   return texture;
 }
 export function createGym(scene) {
+  const cameraSeats = [];
   const material = (color, extra = {}) =>
     new T.MeshStandardMaterial({ color, roughness: 0.65, ...extra });
-  const wood = material("#ffffff", { map: parquet(), roughness: 0.38 });
+  const wood = new T.MeshPhysicalMaterial({
+    color: "#ffffff",
+    clearcoat: 0.45,
+    clearcoatRoughness: 0.32,
+    map: parquet(),
+    roughness: 0.38,
+  });
   const blue = material("#2465a3", { roughness: 0.45 });
   const dark = material("#192634"),
     seat = material("#27394b"),
@@ -234,6 +241,12 @@ export function createGym(scene) {
       const x = side * (9 + row * 0.8),
         y = row * 0.42;
       mesh(new T.BoxGeometry(0.83, 0.4, 30), dark, x, y + 0.2, -8.2);
+      cameraSeats.push(
+        new T.Box3(
+          new T.Vector3(x - 0.48, y, -23.2),
+          new T.Vector3(x + 0.48, y + 0.9, 6.8),
+        ),
+      );
       for (let n = 0; n < 35; n++) {
         if (n % 12 === 0) continue;
         const z = -22.3 + n * 0.82;
@@ -319,4 +332,20 @@ export function createGym(scene) {
     9.4,
   );
   banner.rotation.y = Math.PI;
+  scene.updateMatrixWorld(true);
+  return scene.children
+    .filter(
+      (o) =>
+        o.isMesh &&
+        !o.isInstancedMesh &&
+        (o.geometry.type === "BoxGeometry" ||
+          (o.geometry.type === "PlaneGeometry" &&
+            (o.position.y > 8 ||
+              o.position.x === -15.5 ||
+              o.position.x === 15.5 ||
+              o.position.z === -26 ||
+              o.position.z === 9.6))),
+    )
+    .map((o) => new T.Box3().setFromObject(o))
+    .concat(cameraSeats);
 }

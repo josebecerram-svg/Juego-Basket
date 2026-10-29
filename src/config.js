@@ -1,4 +1,14 @@
 export const config = {
+  camera: {
+    distance: 4.6,
+    minDistance: 2.35,
+    height: 3,
+    shoulder: 0.6,
+    lookAhead: 2.2,
+    lookHeight: 0.95,
+    fov: 66,
+    radius: 0.24,
+  },
   court: { halfWidth: 7.5, minZ: -22.2, maxZ: 5.8 },
   movement: {
     speed: 3.4,

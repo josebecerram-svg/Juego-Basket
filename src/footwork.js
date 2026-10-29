@@ -108,7 +108,8 @@ export class Footwork {
       };
       if (swing.time <= dt) {
         swing.target = prediction;
-        swing.targetYaw = yaw;
+        swing.targetYaw =
+          yaw + (movement?.bodyTurnVelocity ?? 0) * Math.min(0.12, remaining);
       }
       const correction =
         (1 - smooth((t - 0.4) / 0.3)) * (1 - Math.exp(-dt * 15));
@@ -116,8 +117,16 @@ export class Footwork {
       swing.target.z = lerp(swing.target.z, prediction.z, correction);
       swing.targetYaw +=
         Math.atan2(
-          Math.sin(yaw - swing.targetYaw),
-          Math.cos(yaw - swing.targetYaw),
+          Math.sin(
+            yaw +
+              (movement?.bodyTurnVelocity ?? 0) * Math.min(0.12, remaining) -
+              swing.targetYaw,
+          ),
+          Math.cos(
+            yaw +
+              (movement?.bodyTurnVelocity ?? 0) * Math.min(0.12, remaining) -
+              swing.targetYaw,
+          ),
         ) * correction;
       foot.position = {
         x: lerp(swing.start.x, swing.target.x, s),
