@@ -1,9 +1,170 @@
-import {config as c} from './config.js';import {camera} from './camera.js';import {drawPlayer} from './player.js';
-export function render(canvas,shot){const dpr=devicePixelRatio||1;const {w,h,s,point:p}=camera(canvas);if(canvas.width!==Math.round(w*dpr)||canvas.height!==Math.round(h*dpr)){canvas.width=w*dpr;canvas.height=h*dpr;}const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
- const line=(a,b,color,width=1)=>{ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(...p(...a));ctx.lineTo(...p(...b));ctx.stroke();};
- const floor=p(0,0)[1];const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,'#20352f');grad.addColorStop(1,'#30463b');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h);ctx.fillStyle='#536047';ctx.fillRect(0,floor,w,h-floor);for(let x=-2;x<12;x+=.6)line([x,0],[x+.7,-1],'#6c7456');line([-2,0],[12,0],'#bdc89a',2);line([.8,.02],[7.8,.02],'#d9dec0',2);line([4.8,.02],[4.8,-.7],'#d9dec0',2);
- line([7.12,0],[7.12,3.6],'#859782',9);line([7.12,3.6],[6.86,3.6],'#859782',7);line([c.board.x,c.board.bottom],[c.board.x,c.board.top],'#d8e4ce',7);line([c.board.x-.03,3.12],[c.board.x-.03,3.6],'#99bba1',2);
- for(let i=0;i<=6;i++){const x=c.hoop.x-c.hoop.radius+i*.08;line([x,3.03],[c.hoop.x+(x-c.hoop.x)*.55,2.57],'#c1cfb6');}line([6.22,2.8],[6.58,2.8],'#c1cfb6');line([6.27,2.59],[6.53,2.59],'#c1cfb6');line([6.16,3.05],[6.82,3.05],'#f39855',4);
- const lift=shot.phase==='windup'?Math.sin(shot.time/c.windup*Math.PI)*.22:shot.phase==='flight'?Math.max(0,.2-shot.time*.4):0;drawPlayer(ctx,p,s,lift);
- const b=shot.ball;const [bx,by]=p(b.x,b.y+(shot.phase==='windup'?lift*.2:0));ctx.fillStyle='#121f18';ctx.globalAlpha=.25;ctx.beginPath();ctx.ellipse(p(b.x,0)[0],floor+4,.16*s,.035*s,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;ctx.fillStyle='#ed9953';ctx.beginPath();ctx.arc(bx,by,c.ballRadius*s,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#754629';ctx.lineWidth=1.2;ctx.stroke();ctx.beginPath();ctx.moveTo(bx-c.ballRadius*s,by);ctx.lineTo(bx+c.ballRadius*s,by);ctx.moveTo(bx,by-c.ballRadius*s);ctx.lineTo(bx,by+c.ballRadius*s);ctx.stroke();
+import * as T from "../vendor/three.module.js";
+import { config as c } from "./config.js";
+import { createCamera } from "./camera.js";
+import { createPlayer } from "./player.js";
+import { velocity } from "./physics.js";
+export function createScene(canvas) {
+  const renderer = new T.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  const scene = new T.Scene();
+  scene.background = new T.Color("#20352f");
+  scene.fog = new T.Fog("#20352f", 18, 40);
+  scene.add(new T.HemisphereLight("#eff4d9", "#344938", 2.4));
+  const light = new T.DirectionalLight("#fff2d6", 3);
+  light.position.set(-4, 10, -2);
+  light.castShadow = true;
+  light.shadow.mapSize.set(1024, 1024);
+  scene.add(light);
+  const mat = (color, extra = {}) =>
+    new T.MeshStandardMaterial({ color, roughness: 0.7, ...extra });
+  function mesh(g, m, x, y, z) {
+    const o = new T.Mesh(g, m);
+    o.position.set(x, y, z);
+    o.castShadow = true;
+    o.receiveShadow = true;
+    scene.add(o);
+    return o;
+  }
+  const floor = mesh(new T.PlaneGeometry(12, 16), mat("#536047"), 0, -0.01, 2);
+  floor.rotation.x = -Math.PI / 2;
+  function line(points, color = "#d9dec0") {
+    const o = new T.Line(
+      new T.BufferGeometry().setFromPoints(
+        points.map((p) => new T.Vector3(...p)),
+      ),
+      new T.LineBasicMaterial({ color }),
+    );
+    scene.add(o);
+    return o;
+  }
+  line([
+    [-5, 0.005, -5],
+    [5, 0.005, -5],
+    [5, 0.005, 9],
+    [-5, 0.005, 9],
+    [-5, 0.005, -5],
+  ]);
+  line([
+    [-2, 0.01, 5.7],
+    [-2, 0.01, 0.5],
+    [2, 0.01, 0.5],
+    [2, 0.01, 5.7],
+  ]);
+  for (const z of [-4, -2, 0, 2, 4, 6, 8])
+    line(
+      [
+        [-5, 0, z],
+        [5, 0, z],
+      ],
+      "#667252",
+    );
+  const arc = [];
+  for (let i = 0; i <= 64; i++) {
+    let a = (i / 64) * Math.PI * 2;
+    arc.push([Math.cos(a) * 1.7, 0.015, 0.5 + Math.sin(a) * 1.7]);
+  }
+  line(arc);
+  const h = c.hoop;
+  mesh(new T.BoxGeometry(0.16, 3.6, 0.16), mat("#859782"), 0, 1.8, 5.15);
+  mesh(new T.BoxGeometry(0.16, 0.12, 0.5), mat("#859782"), 0, 3.55, 4.93);
+  mesh(
+    new T.BoxGeometry(
+      c.board.halfWidth * 2,
+      c.board.top - c.board.bottom,
+      0.06,
+    ),
+    mat("#d8e4ce", { transparent: true, opacity: 0.65 }),
+    0,
+    (c.board.top + c.board.bottom) / 2,
+    c.board.z,
+  );
+  line(
+    [
+      [-0.3, 3.1, 4.68],
+      [-0.3, 3.65, 4.68],
+      [0.3, 3.65, 4.68],
+      [0.3, 3.1, 4.68],
+      [-0.3, 3.1, 4.68],
+    ],
+    "#fff5dc",
+  );
+  const ring = mesh(
+    new T.TorusGeometry(h.radius, h.tube, 12, 64),
+    mat("#f39855"),
+    h.x,
+    h.y,
+    h.z,
+  );
+  ring.rotation.x = Math.PI / 2;
+  mesh(new T.BoxGeometry(0.1, 0.05, 0.18), mat("#f39855"), 0, h.y, 4.62);
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    line(
+      [
+        [Math.cos(a) * h.radius, h.y, h.z + Math.sin(a) * h.radius],
+        [Math.cos(a) * 0.14, 2.58, h.z + Math.sin(a) * 0.14],
+      ],
+      "#c1cfb6",
+    );
+  }
+  for (const y of [2.6, 2.8]) {
+    const pts = [];
+    const r = 0.14 + ((y - 2.58) / 0.47) * 0.1;
+    for (let i = 0; i <= 32; i++) {
+      let a = (i / 32) * Math.PI * 2;
+      pts.push([r * Math.cos(a), y, h.z + r * Math.sin(a)]);
+    }
+    line(pts, "#c1cfb6");
+  }
+  const ball = mesh(
+    new T.SphereGeometry(c.ballRadius, 24, 16),
+    mat("#ed9953"),
+    0,
+    2.1,
+    0,
+  );
+  for (const rot of [0, Math.PI / 2]) {
+    const seam = new T.Mesh(
+      new T.TorusGeometry(c.ballRadius + 0.001, 0.004, 4, 48),
+      mat("#754629"),
+    );
+    seam.rotation.y = rot;
+    ball.add(seam);
+  }
+  const player = createPlayer(scene);
+  const rig = createCamera();
+  const guide = line([], "#dbef95");
+  guide.material.transparent = true;
+  guide.material.opacity = 0.6;
+  return {
+    render(shot) {
+      const w = canvas.clientWidth,
+        h = canvas.clientHeight;
+      renderer.setSize(w, h, false);
+      rig.update(w, h);
+      player.update(shot);
+      ball.position.set(shot.ball.x, shot.ball.y, shot.ball.z);
+      ball.rotation.x += shot.phase === "flight" ? 0.025 : 0;
+      guide.visible = ["ready", "charging"].includes(shot.phase);
+      if (guide.visible) {
+        const v = velocity(
+            shot.phase === "charging" ? shot.power : 0.42,
+            shot.aim.yaw,
+            shot.aim.angle,
+          ),
+          pts = [];
+        for (let t = 0; t < 2; t += 0.04) {
+          const y = c.initial.y + v.vy * t - 0.5 * c.gravity * t * t;
+          if (y < 0.12) break;
+          pts.push(
+            new T.Vector3(c.initial.x + v.vx * t, y, c.initial.z + v.vz * t),
+          );
+        }
+        guide.geometry.dispose();
+        guide.geometry = new T.BufferGeometry().setFromPoints(pts);
+      }
+      renderer.render(scene, rig.camera);
+    },
+  };
 }

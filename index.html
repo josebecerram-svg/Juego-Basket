@@ -1,1 +1,69 @@
-<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Basket · Práctica de tiro</title><link rel="stylesheet" href="style.css"><body><main><header><a class="brand" href="."><span>◉</span> BASKET<span class="tag">PROTOTIPO 01</span></a><span class="mode">● &nbsp; PRÁCTICA LIBRE</span></header><section class="intro"><p class="eyebrow">TU CANCHA. TU MOMENTO.</p><h1>Todo empieza con un tiro.</h1><p>Frente al aro, sin prisa. Prepara tu lanzamiento y encuentra la canasta.</p></section><section class="game"><div class="topline"><span>01 / SESIÓN DE TIRO</span><span>VISTA LATERAL</span></div><canvas aria-label="Cancha de basketball con jugador y balón frente al aro"></canvas><div class="feedback" role="status" aria-live="polite">Listo para lanzar</div><div class="bottomline"><span><i></i> CANCHA DE PRÁCTICA</span><span>UN JUGADOR · UN BALÓN</span></div></section><footer><div><span class="eyebrow">UN TIRO A LA VEZ</span><p id="hint">Pulsa Lanzar para soltar el balón.</p></div><button id="shoot">Lanzar <span>↗</span></button></footer><p class="note">Escena y controles provisionales · El balón vuelve a tus manos después de cada intento.</p></main><script type="module" src="src/main.js"></script></body></html>
+<!doctype html>
+<html lang="es">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  /><title>Basket · Práctica de tiro</title
+  ><link rel="stylesheet" href="style.css" />
+  <body>
+    <main>
+      <header>
+        <a class="brand" href="."
+          ><span>◉</span> BASKET<span class="tag">PROTOTIPO 02</span></a
+        ><span class="mode">● &nbsp; PRÁCTICA LIBRE</span>
+      </header>
+      <section class="intro">
+        <p class="eyebrow">TU CANCHA. TU MOMENTO.</p>
+        <h1>Todo empieza con un tiro.</h1>
+        <p>
+          Frente al aro, sin prisa. Prepara tu lanzamiento y encuentra la
+          canasta.
+        </p>
+      </section>
+      <section class="game">
+        <div class="topline">
+          <span>01 / SESIÓN DE TIRO</span><span>TERCERA PERSONA · 3D</span>
+        </div>
+        <canvas
+          aria-label="Cancha 3D desde atrás del jugador. Arrastra para apuntar."
+        ></canvas>
+        <div class="feedback" role="status" aria-live="polite">
+          Listo para lanzar
+        </div>
+        <div class="bottomline">
+          <span><i></i> CANCHA DE PRÁCTICA</span
+          ><span>UN JUGADOR · UN BALÓN</span>
+        </div>
+      </section>
+      <section class="aim-controls" aria-label="Puntería">
+        <label
+          >Dirección <output id="direction-value">0°</output
+          ><input
+            id="direction"
+            type="range"
+            min="-25"
+            max="25"
+            value="0" /></label
+        ><label
+          >Ángulo <output id="angle-value">55°</output
+          ><input id="angle" type="range" min="40" max="70" value="55" /></label
+        ><label
+          >Potencia <output id="power-value">0 %</output
+          ><meter id="power" min="0" max="1" value="0"></meter
+        ></label>
+      </section>
+      <footer>
+        <div>
+          <span class="eyebrow">UN TIRO A LA VEZ</span>
+          <p id="hint">Apunta, mantén Lanzar y suelta para tirar.</p>
+        </div>
+        <button id="shoot">Lanzar <span>↗</span></button>
+      </footer>
+      <p class="note">
+        Arrastra la cancha o usa los deslizadores para apuntar · Mantén Lanzar
+        para cargar · El balón vuelve a tus manos después de cada intento.
+      </p>
+    </main>
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>

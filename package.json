@@ -1,1 +1,13 @@
-{"name":"juego-basket","private":true,"type":"module","scripts":{"dev":"node server.js","start":"node server.js","test":"node --test"},"engines":{"node":">=18"}}
+{
+  "name": "juego-basket",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

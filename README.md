@@ -1,27 +1,34 @@
-# Basket · prototipo 01
+# Basket · prototipo 02 · 3D
 
-Prototipo de práctica de tiro en JavaScript y Canvas 2D, sin dependencias externas. Requiere Node.js 18 o posterior y un navegador moderno.
+Práctica de tiro en tercera persona con Three.js, cámara detrás y a un lado del jugador y física 3D a paso fijo. Paleta y modelos provisionales. Un jugador quieto, un balón y un aro.
 
 ## Abrir
 
-Desde este directorio ejecuta `npm run dev` y abre `http://localhost:5173` en tu navegador. Para otro puerto, usa `PORT=8080 npm run dev`. No requiere instalar paquetes ni compilar.
+La versión publicada en GitHub Pages usa directamente `index.html`, `src/` y `vendor/`; no necesita compilación ni CDN. Para ejecutarlo en tu computador, con los archivos descargados y Node.js >=18: ejecuta `npm run dev` desde la carpeta del proyecto y abre `http://localhost:5173` en esa misma máquina. El navegador necesita WebGL 2. En la nube, localhost solo funciona dentro de la máquina remota.
 
-## Probar
+## Controles
 
-Pulsa **Lanzar**. El jugador prepara el tiro y suelta el balón desde las manos. El botón permanece deshabilitado durante el intento. La pelota cruza el aro, rebota en el suelo y vuelve automáticamente al jugador; repite varios tiros. El mensaje indica «¡Canasta!» o «Inténtalo de nuevo».
+- Arrastra sobre la cancha con mouse o dedo para ajustar dirección horizontal y elevación. También puedes usar los deslizadores **Dirección** y **Ángulo**.
+- Mantén presionado **Lanzar** para cargar de 0 a 100 % en 1,6 segundos; suéltalo para tirar. La carga permanece al máximo si continúas manteniendo el botón. La línea muestra la trayectoria prevista sin colisiones; antes de cargar representa una potencia orientativa del 42 %.
+- El medidor muestra la potencia actual. Como referencia para practicar, dirección 0°, ángulo 55° y potencia cercana al 42 % permiten encestar; cargar menos queda corto y cargar mucho puede sobrepasar el aro.
+- Espera a que termine el movimiento del balón: aparecerá **¡Canasta!** o **Fallaste**, y regresará a tus manos. Solo hay un balón y no se puede iniciar otro tiro durante un intento.
+- El botón también admite mantener y soltar Espacio/Enter cuando tiene el foco, como comportamiento accesible del propio botón. No hay atajos globales ni teclas de movimiento.
 
-Ejecuta `npm test` para comprobar liberación, tres tiros consecutivos, bloqueo de tiros simultáneos, colisiones con suelo, tablero y aro, cruces ascendentes y exteriores y protección contra canastas duplicadas.
+## Parámetros y módulos
 
-## Organización
+`src/config.js` centraliza `minForce`/`maxForce` (4,8–10,8 m/s), `chargeSeconds`, gravedad, posición inicial, radios y restitución. Dirección: −25° a +25° respecto al aro. Elevación: 40° a 70°. Internamente los ángulos se expresan en radianes. Los límites se definen en `config.js` y `controls.js` los aplica a los deslizadores.
 
-- `src/config.js`: fuerza, ángulo (radianes), gravedad, posición de salida, dimensiones y tiempos.
-- `src/physics.js`: estados, integración a paso fijo y colisiones.
-- `src/controls.js`: botón provisional, sin teclas asignadas.
-- `src/camera.js`: encuadre adaptable.
-- `src/player.js`: figura y animación básica de brazos.
-- `src/scene.js`: cancha, tablero, aro, red y balón.
-- `src/main.js`: bucle y mensajes.
+- `physics.js`: velocidad tridimensional, estados, colisiones esfera/suelo, tablero finito y aro toroidal; detección descendente dentro de la abertura, una vez por tiro y antes de tocar el suelo.
+- `camera.js`: perspectiva de tercera persona y encuadre adaptable, anclado a la posición fija del jugador.
+- `player.js`: cuerpo y brazos articulados; manos en el punto de salida.
+- `scene.js`: modelos 3D, iluminación, guía y renderizado.
+- `controls.js`: puntería, carga, cancelación y controles de pantalla.
+- `main.js`: integración a 240 Hz, interfaz y renderizado.
 
-## Límites de esta etapa
+## Validación
 
-Vista lateral 2D y figuras provisionales. Tiro fijo y determinista, calibrado para encestar: no hay puntería ni variación aleatoria. Para ensayar fallos, ajusta fuerza o ángulo en `src/config.js`. Física simplificada: el aro se representa por dos secciones circulares; el tablero es una superficie vertical y la red es visual. No hay desplazamiento, rivales, multijugador ni controles definitivos. El resultado aparece al encestar o tocar el suelo y el balón se devuelve tras completar el intento.
+`npm test` comprueba tiros corto, largo, lateral y canasta, tres intentos consecutivos, salida desde las manos, exclusión de tiros simultáneos, rebotes en suelo/tablero/aro, dirección del cruce y carga/cancelación.
+
+## Límites
+
+Física simplificada, sin simulación de tela para la red ni colisiones con el cuerpo. Modelos geométricos provisionales. Cámara fija de tercera persona, sin desplazamientos ni órbita libre. Sin rivales ni modos adicionales. La guía ignora rebotes y usa una curva ideal; el resultado real se calcula con integración y colisiones. Los intentos terminan al quedar casi inmóvil el balón o a los seis segundos. Three.js 0.170.0 se incluye localmente con su licencia MIT en `vendor/`.

@@ -1,1 +1,19 @@
-export const config={gravity:9.81,force:7.3,angle:55*Math.PI/180,initial:{x:2.1,y:2.1},ballRadius:.12,restitution:.65,hoop:{x:6.4,y:3.05,radius:.24,tube:.025},board:{x:6.82,bottom:2.85,top:4.05},windup:.38,resetDelay:1.5,maxFlight:4};
+export const config = {
+  gravity: 9.81,
+  angle: (55 * Math.PI) / 180,
+  minForce: 4.8,
+  maxForce: 10.8,
+  chargeSeconds: 1.6,
+  initial: { x: 0, y: 2.1, z: 0 },
+  player: { x: 0, z: -0.38 },
+  ballRadius: 0.12,
+  restitution: 0.65,
+  hoop: { x: 0, y: 3.05, z: 4.3, radius: 0.24, tube: 0.025 },
+  board: { z: 4.72, bottom: 2.85, top: 4.05, halfWidth: 0.9 },
+  windup: 0.28,
+  resetDelay: 1.3,
+  maxFlight: 6,
+  maxYaw: (25 * Math.PI) / 180,
+  minAngle: (40 * Math.PI) / 180,
+  maxAngle: (70 * Math.PI) / 180,
+};
