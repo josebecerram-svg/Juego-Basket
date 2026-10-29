@@ -23,7 +23,8 @@ export function createPlayer(scene, profile = athletes.rivera) {
     trim = mat(profile.trim),
     shoeMaterial = mat(profile.shoe, 0.58),
     shoeAccent = mat(profile.shoeAccent, 0.65),
-    sole = mat("#c5cccf"),
+    sole = mat("#8d918e"),
+    sockMaterial = mat(profile.socks ?? "#e5e9e3", 0.94),
     black = mat("#222a2f");
   const fabric = document.createElement("canvas");
   fabric.width = fabric.height = 128;
@@ -127,23 +128,22 @@ export function createPlayer(scene, profile = athletes.rivera) {
   group.add(body);
   body.name = "torso";
   body.scale.y = upperScale;
+  // Loose basketball vest: more room at the hem and a strong shoulder line.
+  const shirtProfile = [
+    [0.187, 1.015],
+    [0.19, 1.07],
+    [0.18, 1.19],
+    [0.194, 1.33],
+    [0.235, 1.44],
+    [0.215, 1.51],
+    [0.09, 1.55],
+  ];
+  const shirtPoints = new T.SplineCurve(
+    shirtProfile.map(([r, y]) => new T.Vector2(r, y)),
+  ).getPoints(56);
   const torso = add(
     body,
-    foldGeometry(
-      new T.LatheGeometry(
-        [
-          [0.155, 1.06],
-          [0.17, 1.1],
-          [0.175, 1.19],
-          [0.19, 1.33],
-          [0.235, 1.44],
-          [0.215, 1.51],
-          [0.09, 1.55],
-        ].map(([x, y]) => new T.Vector2(x, y)),
-        48,
-      ),
-      0.016,
-    ),
+    foldGeometry(new T.LatheGeometry(shirtPoints, 64), 0.024),
     jersey,
   );
   torso.scale.set(bulk, 1, 0.68 * bulk);
@@ -308,11 +308,15 @@ export function createPlayer(scene, profile = athletes.rivera) {
   );
   cap.scale.set(0.115, 0.15, 0.111);
   cap.position.y = 0.005;
-  if (profile.hairStyle === "coils") {
+  if (["coils", "texture"].includes(profile.hairStyle)) {
     cap.scale.y = 0.16;
     // Deterministic instanced curls: no external model or licensed likeness.
     const curls = new T.InstancedMesh(
-      new T.SphereGeometry(0.012, 7, 5),
+      new T.SphereGeometry(
+        profile.hairStyle === "texture" ? 0.006 : 0.012,
+        7,
+        5,
+      ),
       hair,
       160,
     );
@@ -349,14 +353,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
     // Follow the curved jersey so surname/chest print never disappears inside it.
     const panelGeometry = new T.PlaneGeometry(0.245, 0.36, 10, 14);
     const panelVertices = panelGeometry.attributes.position;
-    const chestRings = [
-      [1.06, 0.155],
-      [1.1, 0.17],
-      [1.19, 0.175],
-      [1.33, 0.19],
-      [1.44, 0.235],
-      [1.51, 0.215],
-    ];
+    const chestRings = shirtPoints.map((p) => [p.y, p.x]);
     for (let i = 0; i < panelVertices.count; i++) {
       const y = panelVertices.getY(i) + 1.3,
         x = panelVertices.getX(i);
@@ -373,7 +370,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
         0.68 *
           bulk *
           Math.sqrt(Math.max(0.001, radius * radius - (x / bulk) ** 2)) +
-          0.005,
+          0.008,
       );
     }
     panelGeometry.computeVertexNormals();
@@ -412,6 +409,15 @@ export function createPlayer(scene, profile = athletes.rivera) {
       thigh = limb(group, skin, 0.095, 0.065),
       shin = limb(group, skin, 0.062, 0.041);
     short.geometry = foldGeometry(short.geometry, 0.025);
+    const hem = add(
+      short,
+      new T.CylinderGeometry(0.122 * bulk, 0.122 * bulk, 0.028, 28, 1, true),
+      trim,
+      0,
+      0.46,
+      0,
+    );
+    hem.name = "shorts-hem";
     const knee = ellipsoid(
       group,
       skin,
@@ -426,7 +432,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
     add(
       foot,
       new T.CylinderGeometry(0.045, 0.047, 0.14, 16),
-      white,
+      sockMaterial,
       0,
       0.13,
       0,
@@ -488,7 +494,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
       0.055,
     );
     sideStripe.rotation.x = -0.2;
-    const shortStripe = limb(group, trim, 0.012, 0.012);
+    const shortStripe = limb(group, trim, 0.006, 0.006);
     legs.push({ side, short, thigh, shin, knee, foot, shortStripe });
   }
   const arms = [];
@@ -704,7 +710,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
             pole,
             Math.sqrt(Math.max(0, upperLeg * upperLeg - along * along)),
           );
-        const shortEnd = hip.clone().lerp(knee, 0.55);
+        const shortEnd = hip.clone().lerp(knee, profile.shortsLength ?? 0.82);
         segment(leg.short, hip, shortEnd);
         segment(leg.thigh, hip.clone().lerp(knee, 0.35), knee);
         segment(leg.shin, knee, ankle);

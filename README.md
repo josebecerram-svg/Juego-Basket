@@ -40,6 +40,12 @@ La ambientación sigue siendo original de Baseline: parquet claro con respuesta 
 
 Los pases, tiros y el cambio automático al receptor no se rediseñan en esta etapa. No se añaden movimientos especiales ni combinaciones. Los movimientos especiales y los diseños futuros de pase/tiro siguen pendientes de instrucciones específicas; el acabado anatómico y las animaciones continúan siendo procedurales, sin captura de movimiento.
 
+## Referencia física · versión 10
+
+La imagen aportada se usa como guía de silueta y equipación, no como imagen del escenario ni como textura fotográfica. Rivera conserva su identidad original, con complexión atlética más robusta, piel oscura, cabello corto texturizado, camiseta roja holgada, shorts oscuros cerca de la rodilla, calcetines y zapatillas oscuros. La camiseta tiene más volumen en el bajo, pliegues con mayor resolución geométrica y ribetes cálidos. Los pantalones siguen la articulación de cada pierna y llevan un dobladillo contrastado. Silva mantiene la equipación azul y se distingue por altura, complexión, tez, peinado y rostro.
+
+No se reproducen el rostro ni otras señas particulares de la persona de la foto. Tampoco se añaden las acciones mostradas en el collage: continúan únicamente desplazamiento, pase, recepción y tiro. Los controles, la física, la cámara y el cambio automático de jugador al recibir se conservan. El modelo continúa siendo procedural y estilizado; la referencia orienta sus proporciones y vestimenta, no implica un acabado fotográfico.
+
 ## Gestos continuos · versión 09
 
 Se conservan las identidades originales de Rivera y Silva, con equipaciones marfil/azul sin logotipos; el frontal lleva solo el dorsal. Rivera gana desarrollo atlético proporcionado en hombros y piernas. Ambos usan contornos musculares interpolados, cara esculpida continua (sin esferas superpuestas en mandíbula/pómulos), cavidades orbitales, una línea de cabello más alta y microrrelieve de piel generado localmente. Se mantienen rostros, peinados, colores y estaturas distintos, ropa con pliegues, dedos articulados y zapatillas sin marcas.
@@ -96,6 +102,6 @@ Modelo humano procedural estilizado, sin escaneo fotográfico ni captura de movi
 
 ## Publicación y caché
 
-La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **09**.
+La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **10**.
 
 Después de modificar archivos, ejecuta `npm run version:assets` y luego `npm test` antes de subir a `main`. `npm run dev` actualiza automáticamente las versiones al arrancar. La comprobación de pruebas detecta recursos modificados sin actualizar su identificador. GitHub Pages sigue publicando desde la raíz de `main`, sin compilación externa. Para una primera carga después de una actualización, añade `?release=IDENTIFICADOR` a la URL del juego; esto renueva el documento HTML además de sus módulos.
