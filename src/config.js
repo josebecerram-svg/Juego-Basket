@@ -1,6 +1,15 @@
 export const config = {
   court: { halfWidth: 7.5, minZ: -22.2, maxZ: 5.8 },
-  movement: { speed: 3.4, acceleration: 12, margin: 0.35 },
+  movement: {
+    speed: 3.4,
+    acceleration: 7.5,
+    deceleration: 9.5,
+    turnSpeed: 5.5,
+    bodyTurnSpeed: 5,
+    margin: 0.35,
+  },
+  companion: { x: -3.2, z: 1, name: "SILVA", number: "12" },
+  passing: { speed: 8, preparation: 0.3, catchTime: 0.3, maxDistance: 12 },
   controls: { forward: "KeyW", left: "KeyA", backward: "KeyS", right: "KeyD" },
   gravity: 9.81,
   angle: (55 * Math.PI) / 180,

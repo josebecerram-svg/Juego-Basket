@@ -16,18 +16,21 @@ export class Shot {
     this.aim = { yaw: 0, angle: c.angle };
     this.reset();
   }
+  aimYaw() {
+    return this.bodyYaw ?? this.aim.yaw;
+  }
   origin() {
     const held = heldPosition(this);
     return {
       x:
         this.player.x +
-        Math.sin(this.aim.yaw) * held.z +
-        Math.cos(this.aim.yaw) * (held.x ?? 0),
+        Math.sin(this.aimYaw()) * held.z +
+        Math.cos(this.aimYaw()) * (held.x ?? 0),
       y: held.y,
       z:
         this.player.z +
-        Math.cos(this.aim.yaw) * held.z -
-        Math.sin(this.aim.yaw) * (held.x ?? 0),
+        Math.cos(this.aimYaw()) * held.z -
+        Math.sin(this.aimYaw()) * (held.x ?? 0),
     };
   }
   hold() {
@@ -54,12 +57,13 @@ export class Shot {
     this.launch = {
       power: this.power,
       ...this.aim,
+      yaw: this.aimYaw(),
       held: heldPosition(this),
       hoop: { ...(this.targetHoop ?? c.hoop) },
       origin: {
-        x: this.player.x + Math.sin(this.aim.yaw) * 0.38,
+        x: this.player.x + Math.sin(this.aimYaw()) * 0.38,
         y: c.initial.y,
-        z: this.player.z + Math.cos(this.aim.yaw) * 0.38,
+        z: this.player.z + Math.cos(this.aimYaw()) * 0.38,
       },
     };
     this.stats.attempts++;
@@ -81,6 +85,11 @@ export class Shot {
       if (this.time >= c.windup) {
         this.phase = "flight";
         this.time = 0;
+        this.launch.origin = {
+          x: this.player.x + Math.sin(this.launch.yaw) * 0.38,
+          y: c.initial.y,
+          z: this.player.z + Math.cos(this.launch.yaw) * 0.38,
+        };
         this.ball = {
           ...this.launch.origin,
           ...velocity(this.launch.power, this.launch.yaw, this.launch.angle),

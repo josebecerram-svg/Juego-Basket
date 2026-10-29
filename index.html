@@ -15,7 +15,7 @@
           ></a
         >
         <div class="header-mode">
-          <i></i> PRÁCTICA INDIVIDUAL <span>04</span>
+          <i></i> PRÁCTICA CON COMPAÑERO <span>05</span>
         </div>
       </header>
       <section class="session-heading">
@@ -35,7 +35,7 @@
         <div class="score-hud hud">
           <div class="score-mode">
             <span class="live-dot"></span> PRÁCTICA LIBRE
-            <span>INDIVIDUAL</span>
+            <span>CON COMPAÑERO</span>
           </div>
           <div class="score-main">
             <div class="mini-jersey">07</div>
@@ -94,8 +94,9 @@
             ><span><i></i> EXCESIVA</span>
           </div>
         </div>
-        <div class="court-caption hud">
-          TRAINING CENTER <span>01 / CANCHA PRINCIPAL</span>
+        <div class="possession-hud hud">
+          <span>POSESIÓN</span><strong id="possession">07 · RIVERA</strong>
+          <p id="pass-status">E — Pasar</p>
         </div>
       </section>
       <section class="control-dock">
@@ -116,6 +117,9 @@
               <path d="M8 1v9H2" stroke="currentColor" /></svg></span
           ><span>Apuntar con mouse</span>
         </div>
+        <button id="pass" class="pass-button">
+          <kbd>E</kbd><span id="pass-action">Pasar</span>
+        </button>
         <p id="hint">Mantén clic izquierdo para cargar y suelta para tirar.</p>
         <button id="shoot">
           Lanzar

@@ -63,6 +63,49 @@ export function createScene(canvas) {
     ball.add(seam);
   }
   const player = createPlayer(scene);
+  const companion = createPlayer(scene, {
+    name: "SILVA",
+    number: "12",
+    skin: "#c99773",
+  });
+  function marker(color) {
+    const m = new T.Mesh(
+      new T.RingGeometry(0.38, 0.43, 40),
+      new T.MeshBasicMaterial({
+        color,
+        transparent: true,
+        opacity: 0.8,
+        side: T.DoubleSide,
+      }),
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = 0.04;
+    scene.add(m);
+    return m;
+  }
+  const playerMarker = marker("#d5ff5f"),
+    companionMarker = marker("#7acaff");
+  const cv = document.createElement("canvas");
+  cv.width = 256;
+  cv.height = 64;
+  const context = cv.getContext("2d");
+  context.fillStyle = "#10202bee";
+  context.fillRect(0, 0, 256, 64);
+  context.fillStyle = "#ecf5f5";
+  context.textAlign = "center";
+  context.font = "bold 24px Arial";
+  context.fillText("12  SILVA", 128, 41);
+  const labelTex = new T.CanvasTexture(cv);
+  labelTex.colorSpace = T.SRGBColorSpace;
+  const label = new T.Sprite(
+    new T.SpriteMaterial({
+      map: labelTex,
+      transparent: true,
+      depthTest: false,
+    }),
+  );
+  label.scale.set(1, 0.25, 1);
+  scene.add(label);
   const rig = createCamera();
   const guide = line([], "#dbef95");
   guide.material.transparent = true;
@@ -73,14 +116,28 @@ export function createScene(canvas) {
         h = canvas.clientHeight;
       renderer.setSize(w, h, false);
       rig.update(w, h, shot, dt);
-      player.update(shot);
+      player.update(shot, dt);
+      if (shot.companion) {
+        companion.update(shot.companionState(), dt);
+        label.position.set(shot.companion.x, 2.18, shot.companion.z);
+        companionMarker.position.set(shot.companion.x, 0.04, shot.companion.z);
+      }
+      playerMarker.position.set(shot.player.x, 0.04, shot.player.z);
+      playerMarker.material.opacity = shot.possession === "player" ? 0.9 : 0.2;
+      companionMarker.material.opacity =
+        shot.possession === "companion" ? 0.9 : 0.2;
       ball.position.set(shot.ball.x, shot.ball.y, shot.ball.z);
-      ball.rotation.x += shot.phase === "flight" ? 0.025 : 0;
+      ball.rotation.x +=
+        shot.phase === "flight"
+          ? dt * 6
+          : shot.phase === "passing"
+            ? dt * 9
+            : 0;
       guide.visible = ["ready", "charging"].includes(shot.phase);
       if (guide.visible) {
         const v = velocity(
             shot.phase === "charging" ? shot.power : 0.42,
-            shot.aim.yaw,
+            shot.aimYaw(),
             shot.aim.angle,
           ),
           pts = [];
@@ -89,9 +146,9 @@ export function createScene(canvas) {
           if (y < 0.12) break;
           pts.push(
             new T.Vector3(
-              shot.player.x + Math.sin(shot.aim.yaw) * 0.38 + v.vx * t,
+              shot.player.x + Math.sin(shot.aimYaw()) * 0.38 + v.vx * t,
               y,
-              shot.player.z + Math.cos(shot.aim.yaw) * 0.38 + v.vz * t,
+              shot.player.z + Math.cos(shot.aimYaw()) * 0.38 + v.vz * t,
             ),
           );
         }

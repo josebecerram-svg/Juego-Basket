@@ -58,10 +58,22 @@ export function bindControls(button, shot, canvas, movement) {
       }
     });
   }
+  document
+    .querySelector("#pass")
+    .addEventListener("click", () => shot.requestPass());
   const isInput = (e) =>
     e.target instanceof HTMLElement &&
     !!e.target.closest("input,button,a,textarea,select,[contenteditable]");
   window.addEventListener("keydown", (e) => {
+    if (
+      e.code === "KeyE" &&
+      !e.repeat &&
+      (!isInput(e) || e.target.id === "pass")
+    ) {
+      e.preventDefault();
+      shot.requestPass();
+      return;
+    }
     if (isInput(e)) return;
     if (Object.values(c.controls).includes(e.code)) {
       movement.keys.add(e.code);
@@ -69,18 +81,6 @@ export function bindControls(button, shot, canvas, movement) {
     }
   });
   window.addEventListener("keyup", (e) => movement.keys.delete(e.code));
-  button.addEventListener("keydown", (e) => {
-    if ([" ", "Enter"].includes(e.key) && !e.repeat) {
-      e.preventDefault();
-      shot.charge();
-    }
-  });
-  button.addEventListener("keyup", (e) => {
-    if ([" ", "Enter"].includes(e.key)) {
-      e.preventDefault();
-      shot.release();
-    }
-  });
   function clear() {
     movement.clear();
     shot.cancel();

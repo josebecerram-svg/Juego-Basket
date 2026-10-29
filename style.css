@@ -662,3 +662,80 @@ canvas:focus-visible {
   height: 22px;
   display: block;
 }
+.possession-hud {
+  right: 20px;
+  bottom: 20px;
+  width: 210px;
+  padding: 12px 14px;
+  background: #10202bee;
+  border-top: 2px solid #7acaff;
+}
+.possession-hud > span {
+  font-size: 8px;
+  letter-spacing: 2px;
+  color: #9db5be;
+}
+.possession-hud > strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+}
+.possession-hud p {
+  font-size: 10px;
+  margin: 7px 0 0;
+  color: #d5ff5f;
+}
+.possession-hud[data-owner="air"] p,
+.possession-hud[data-owner="shooting"] p {
+  color: #a7bec8;
+}
+.pass-button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 100px;
+  background: #203440;
+  color: #e5f1f4;
+  border: 1px solid #415762;
+  padding: 10px;
+}
+.pass-button:hover {
+  background: #304b5a;
+}
+.pass-button span {
+  margin-left: 0;
+}
+.pass-button kbd {
+  pointer-events: none;
+}
+@media (max-width: 700px) {
+  .possession-hud {
+    width: 124px;
+    right: 10px;
+    bottom: 10px;
+    padding: 8px;
+  }
+  .possession-hud strong {
+    font-size: 10px;
+  }
+  .possession-hud p {
+    font-size: 8px;
+  }
+  .control-dock .pass-button {
+    min-width: 85px;
+    padding: 8px;
+  }
+  .keyboard-help {
+    flex-basis: 100%;
+  }
+  .header-mode {
+    max-width: 125px;
+    text-align: right;
+  }
+  .player-hud {
+    width: 200px;
+  }
+  .possession-hud > span {
+    font-size: 7px;
+  }
+}

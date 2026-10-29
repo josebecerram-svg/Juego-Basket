@@ -36,18 +36,25 @@ export function playerPose(shot) {
   const crouch = charge * 0.09,
     sway = Math.sin(stride * 2) * 0.015 * speed;
   const held = heldPosition(shot);
+  const hand =
+    shot.passPose ??
+    (shot.hasBall === false &&
+    !["windup", "flight", "result"].includes(shot.phase)
+      ? { x: 0, y: 1.15, z: 0.12, spread: 0.16 }
+      : null);
   return {
     speed,
     stride,
     crouch,
     sway,
     follow,
-    hip: 0.96 - crouch + sway,
+    hip: 0.96 - crouch + sway - speed * 0.075,
     hand:
-      shot.phase === "flight"
+      hand ??
+      (shot.phase === "flight"
         ? { y: 1.22 + follow * 0.9, z: 0.18 + follow * 0.2 }
         : shot.phase === "result"
           ? { y: 1.22, z: 0.18 }
-          : held,
+          : held),
   };
 }

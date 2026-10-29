@@ -85,3 +85,35 @@ test("HUD stays clear of the player and hoop in desktop and portrait composition
         }
       }
 });
+
+test("camera includes both people and a traveling pass in portrait and desktop", async () => {
+  const { Practice } = await import("../src/practice.js");
+  for (const [w, h] of [
+    [1160, 660],
+    [358, 600],
+  ])
+    for (const yaw of [0, Math.PI / 2, Math.PI]) {
+      const s = new Practice();
+      s.aim.yaw = yaw;
+      s.bodyYaw = yaw;
+      s.requestPass();
+      s.step(0.35);
+      s.step(0.15);
+      const rig = createCamera();
+      rig.update(w, h, s, 1 / 60);
+      rig.camera.updateMatrixWorld();
+      for (const p of [
+        [s.player.x, 0, s.player.z],
+        [s.player.x, 2.1, s.player.z],
+        [s.companion.x, 0, s.companion.z],
+        [s.companion.x, 2.3, s.companion.z],
+        [s.ball.x, s.ball.y, s.ball.z],
+      ]) {
+        const v = new T.Vector3(...p).project(rig.camera);
+        assert.ok(
+          Math.abs(v.x) < 1 && Math.abs(v.y) < 1,
+          JSON.stringify({ p, v, w, h, yaw }),
+        );
+      }
+    }
+});

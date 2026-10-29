@@ -5,9 +5,9 @@ export function powerFeedback(shot) {
   const origin = frozen
     ? shot.launch.origin
     : {
-        x: shot.player.x + Math.sin(shot.aim.yaw) * 0.38,
+        x: shot.player.x + Math.sin(shot.aimYaw()) * 0.38,
         y: c.initial.y,
-        z: shot.player.z + Math.cos(shot.aim.yaw) * 0.38,
+        z: shot.player.z + Math.cos(shot.aimYaw()) * 0.38,
       };
   const hoop = (frozen ? shot.launch.hoop : shot.targetHoop) ?? c.hoop,
     d = Math.hypot(hoop.x - origin.x, hoop.z - origin.z),
@@ -59,16 +59,23 @@ export function createHud() {
     band.style.width = (p.high - p.low) * 100 + "%";
     meter.setAttribute("aria-valuenow", Math.round(shot.power * 100));
     $("#power-value").textContent = Math.round(shot.power * 100) + "%";
-    $("#power-state").textContent =
-      shot.phase === "charging"
-        ? {
-            low: "POTENCIA BAJA",
-            ideal: "ZONA IDEAL",
-            high: "POTENCIA EXCESIVA",
-          }[p.zone]
-        : shot.phase === "ready"
-          ? "LISTO PARA LANZAR"
-          : "POTENCIA DEL TIRO";
+    $("#power-state").textContent = [
+      "passWindup",
+      "passing",
+      "receive",
+    ].includes(shot.phase)
+      ? "PASE EN CURSO"
+      : shot.phase === "companionHold"
+        ? "SIN BALÓN · PULSA E"
+        : shot.phase === "charging"
+          ? {
+              low: "POTENCIA BAJA",
+              ideal: "ZONA IDEAL",
+              high: "POTENCIA EXCESIVA",
+            }[p.zone]
+          : shot.phase === "ready"
+            ? "LISTO PARA LANZAR"
+            : "POTENCIA DEL TIRO";
     $(".feedback").textContent =
       (shot.scored ? "¡Canasta!" : shot.result) ??
       {
@@ -76,7 +83,27 @@ export function createHud() {
         charging: "Cargando tiro",
         windup: "Lanzando",
         flight: "Balón en juego",
+        passWindup: "Preparando pase",
+        passing: "Pase en vuelo",
+        receive: "Recibiendo el balón",
+        companionHold: "Silva tiene el balón",
       }[shot.phase];
+    $("#possession").textContent =
+      shot.possession === "player"
+        ? "07 · RIVERA"
+        : shot.possession === "companion"
+          ? "12 · SILVA"
+          : "BALÓN EN VUELO";
+    $("#pass-action").textContent =
+      shot.possession === "companion" ? "Pedir balón" : "Pasar";
+    $("#pass-status").textContent =
+      shot.notice ||
+      (shot.phase === "ready"
+        ? "E — Pasar"
+        : shot.phase === "companionHold"
+          ? "E — Pedir devolución"
+          : "Pase no disponible");
+    $(".possession-hud").dataset.owner = shot.possession;
     $(".game").dataset.phase = shot.phase;
     $(".game").dataset.result = shot.scored
       ? "made"

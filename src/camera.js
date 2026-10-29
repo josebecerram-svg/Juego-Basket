@@ -26,13 +26,28 @@ export function createCamera() {
         for (const y of [0, 2.25])
           for (const z of [-0.4, 0.4])
             points.push(new T.Vector3(shot.player.x + x, y, shot.player.z + z));
-      if (shot.phase === "flight")
+      if (shot.companion)
+        for (const x of [-0.38, 0.38])
+          for (const y of [0, 2.15])
+            for (const z of [-0.4, 0.4])
+              points.push(
+                new T.Vector3(shot.companion.x + x, y, shot.companion.z + z),
+              );
+      if (
+        [
+          "flight",
+          "passing",
+          "passWindup",
+          "receive",
+          "companionHold",
+        ].includes(shot.phase)
+      )
         points.push(new T.Vector3(shot.ball.x, shot.ball.y, shot.ball.z));
       const box = new T.Box3().setFromPoints(points),
         center = box.getCenter(new T.Vector3());
       const yawDelta = Math.atan2(
-        Math.sin(shot.aim.yaw - viewYaw),
-        Math.cos(shot.aim.yaw - viewYaw),
+        Math.sin((shot.bodyYaw ?? shot.aim.yaw) - viewYaw),
+        Math.cos((shot.bodyYaw ?? shot.aim.yaw) - viewYaw),
       );
       viewYaw += yawDelta * (initialized ? 1 - Math.exp(-5 * dt) : 1);
       const sin = Math.sin(viewYaw),

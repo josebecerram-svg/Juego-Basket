@@ -1,13 +1,17 @@
 import * as T from "../vendor/three.module.js";
 import { config as c } from "./config.js";
+import { Footwork } from "./footwork.js";
 import { playerPose } from "./pose.js";
 
-export function createPlayer(scene) {
+export function createPlayer(
+  scene,
+  profile = { name: "RIVERA", number: "07", skin: "#b88462" },
+) {
   const group = new T.Group();
   scene.add(group);
   const mat = (color, roughness = 0.7) =>
     new T.MeshStandardMaterial({ color, roughness });
-  const skin = mat("#b88462"),
+  const skin = mat(profile.skin ?? "#b88462"),
     skinShade = mat("#a87556"),
     hair = mat("#201d1b"),
     white = mat("#edf1ec"),
@@ -142,8 +146,8 @@ export function createPlayer(scene) {
     );
     if (back) panel.rotation.y = Math.PI;
   }
-  print("RIVERA", "07", true);
-  print("BASELINE", "07", false);
+  print(profile.name, profile.number, true);
+  print("BASELINE", profile.number, false);
   const hips = new T.Group();
   group.add(hips);
   ellipsoid(hips, navy, [0.19, 0.13, 0.12], 0, 0.96, 0);
@@ -256,32 +260,70 @@ export function createPlayer(scene) {
         Math.sqrt(Math.max(0.0001, upper * upper - along * along)),
       );
   }
+  const footwork = new Footwork();
   return {
     group,
-    update(shot) {
+    footwork,
+    update(shot, dt = 1 / 60) {
       const pose = playerPose(shot);
       group.position.set(shot.player.x, 0, shot.player.z);
       group.rotation.y =
-        shot.phase === "windup" ? shot.launch.yaw : shot.aim.yaw;
+        shot.bodyYaw ??
+        (shot.phase === "windup" ? shot.launch.yaw : shot.aim.yaw);
       head.rotation.x =
         (-0.08 * (shot.aim.angle - c.minAngle)) / (c.maxAngle - c.minAngle) -
         pose.crouch * 0.4;
       body.position.y = pose.hip - 0.96;
-      body.rotation.x = pose.speed * 0.055;
-      hips.position.y = pose.hip - 0.96;
-      for (const leg of legs) {
-        const { side } = leg,
-          wave = Math.sin(pose.stride + (side < 0 ? Math.PI : 0)) * pose.speed;
-        const hip = new T.Vector3(side * 0.105, pose.hip, 0),
-          knee = new T.Vector3(
-            side * 0.113,
-            0.52 - pose.crouch * 0.4,
-            0.025 + pose.crouch * 0.7 + wave * 0.12,
+      body.rotation.x =
+        ((shot.movement?.forward ?? 0) / c.movement.speed) * 0.08;
+      body.rotation.z =
+        (-(shot.movement?.lateral ?? 0) / c.movement.speed) * 0.06;
+      const lookingAtPass =
+        shot.pass && ["passWindup", "passing", "receive"].includes(shot.phase);
+      const headTarget = lookingAtPass ? group.rotation.y : shot.aim.yaw;
+      head.rotation.y = Math.max(
+        -0.4,
+        Math.min(
+          0.4,
+          Math.atan2(
+            Math.sin(headTarget - group.rotation.y),
+            Math.cos(headTarget - group.rotation.y),
           ),
+        ),
+      );
+      hips.position.y = pose.hip - 0.96;
+      const feet = footwork.update(
+        dt,
+        shot.player,
+        group.rotation.y,
+        shot.movement,
+      );
+      for (const [index, leg] of legs.entries()) {
+        const foot = feet[index],
+          { side } = leg,
+          dx = foot.position.x - shot.player.x,
+          dz = foot.position.z - shot.player.z;
+        const sin = Math.sin(group.rotation.y),
+          cos = Math.cos(group.rotation.y);
+        const hip = new T.Vector3(side * 0.105, pose.hip, 0),
           ankle = new T.Vector3(
-            side * 0.12,
-            0.12 + Math.max(0, wave) * 0.15,
-            wave * 0.34,
+            dx * cos - dz * sin,
+            0.12 + foot.position.y,
+            dx * sin + dz * cos,
+          );
+        const axis = ankle.clone().sub(hip),
+          d = Math.min(0.909, axis.length());
+        axis.normalize();
+        const along = (0.46 * 0.46 - 0.45 * 0.45 + d * d) / (2 * d);
+        const pole = new T.Vector3(0, 0, 1)
+          .addScaledVector(axis, -axis.z)
+          .normalize();
+        const knee = hip
+          .clone()
+          .addScaledVector(axis, along)
+          .addScaledVector(
+            pole,
+            Math.sqrt(Math.max(0, 0.46 * 0.46 - along * along)),
           );
         const shortEnd = hip.clone().lerp(knee, 0.55);
         segment(leg.short, hip, shortEnd);
@@ -289,7 +331,13 @@ export function createPlayer(scene) {
         segment(leg.shin, knee, ankle);
         leg.knee.position.copy(knee);
         leg.foot.position.copy(ankle).add(new T.Vector3(0, -0.12, 0));
-        leg.foot.rotation.x = -wave * 0.22;
+        leg.foot.rotation.y = foot.yaw - group.rotation.y;
+        leg.foot.rotation.x = foot.swing
+          ? -0.12 *
+            Math.sin(
+              Math.PI * Math.min(1, foot.swing.time / foot.swing.duration),
+            )
+          : 0;
         segment(
           leg.shortStripe,
           hip.clone().add(new T.Vector3(side * 0.1, 0, 0)),
@@ -305,7 +353,7 @@ export function createPlayer(scene) {
             0,
           ),
           hand = new T.Vector3(
-            (pose.hand.x ?? 0) + side * 0.082,
+            (pose.hand.x ?? 0) + side * (0.082 + (pose.hand.spread ?? 0)),
             pose.hand.y - 0.045,
             pose.hand.z - 0.015,
           );
