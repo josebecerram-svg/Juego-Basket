@@ -1,73 +1,159 @@
 <!doctype html>
 <html lang="es">
-  <meta charset="utf-8" /><meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  /><title>Basket · Práctica de tiro</title
-  ><link rel="stylesheet" href="style.css" />
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Baseline · Basketball Practice</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
   <body>
     <main>
       <header>
         <a class="brand" href="."
-          ><span>◉</span> BASKET<span class="tag">PROTOTIPO 03</span></a
-        ><span class="mode">● &nbsp; PRÁCTICA LIBRE</span>
+          ><span class="brand-icon">B/</span> BASELINE<span class="edition"
+            >BASKETBALL</span
+          ></a
+        >
+        <div class="header-mode">
+          <i></i> PRÁCTICA INDIVIDUAL <span>04</span>
+        </div>
       </header>
-      <section class="intro">
-        <p class="eyebrow">TU CANCHA. TU MOMENTO.</p>
-        <h1>Todo empieza con un tiro.</h1>
-        <p>
-          Frente al aro, sin prisa. Prepara tu lanzamiento y encuentra la
-          canasta.
-        </p>
-      </section>
-      <section class="game">
-        <div class="topline">
-          <span>01 / SESIÓN DE TIRO</span><span>TERCERA PERSONA · 3D</span>
-        </div>
-        <canvas
-          aria-label="Cancha de gimnasio 3D. WASD para moverte, mueve el mouse para apuntar y mantén clic izquierdo para cargar."
-          tabindex="0"
-        ></canvas>
-        <div class="feedback" role="status" aria-live="polite">
-          Listo para lanzar
-        </div>
-        <div class="bottomline">
-          <span><i></i> CANCHA DE PRÁCTICA</span
-          ><span>UN JUGADOR · UN BALÓN</span>
-        </div>
-      </section>
-      <section class="aim-controls" aria-label="Puntería">
-        <label
-          >Dirección <output id="direction-value">0°</output
-          ><input
-            id="direction"
-            type="range"
-            min="-25"
-            max="25"
-            value="0" /></label
-        ><label
-          >Ángulo <output id="angle-value">55°</output
-          ><input id="angle" type="range" min="40" max="70" value="55" /></label
-        ><label
-          >Potencia <output id="power-value">0 %</output
-          ><meter id="power" min="0" max="1" value="0"></meter
-        ></label>
-      </section>
-      <footer>
+      <section class="session-heading">
         <div>
-          <span class="eyebrow">UN TIRO A LA VEZ</span>
-          <p id="hint">
-            WASD para moverte · Mouse para apuntar · Mantén clic izquierdo y
-            suelta.
-          </p>
+          <p class="eyebrow">EL JUEGO EMPIEZA CONTIGO</p>
+          <h1>Haz tuyo cada tiro<span>.</span></h1>
         </div>
-        <button id="shoot">Lanzar <span>↗</span></button>
+        <div class="venue">
+          <span>CANCHA INTERIOR</span><strong>Training Center</strong>
+        </div>
+      </section>
+      <section class="game" aria-label="Práctica de basketball">
+        <canvas
+          tabindex="0"
+          aria-label="Cancha 3D. WASD para moverte, mouse para apuntar, mantén y suelta clic izquierdo para tirar."
+        ></canvas>
+        <div class="score-hud hud">
+          <div class="score-mode">
+            <span class="live-dot"></span> PRÁCTICA LIBRE
+            <span>INDIVIDUAL</span>
+          </div>
+          <div class="score-main">
+            <div class="mini-jersey">07</div>
+            <div class="score-player">
+              <span>JUGADOR</span><strong>A. RIVERA</strong>
+            </div>
+            <div class="score-number">
+              <strong id="score">00</strong><span>PTS</span>
+            </div>
+          </div>
+          <div class="score-details">
+            <span
+              ><b id="made">0</b> CANASTAS / <b id="attempts">0</b> TIROS</span
+            ><span
+              aria-label="Último lanzamiento"
+              id="last-result"
+              role="status"
+              aria-live="polite"
+              >Sin lanzamientos</span
+            >
+          </div>
+        </div>
+        <div class="camera-label hud">
+          <span>3ª PERSONA</span><i></i> EN VIVO
+        </div>
+        <div class="feedback" role="status" aria-live="polite">
+          Encuentra tu tiro
+        </div>
+        <div class="player-hud hud" data-zone="low">
+          <div class="player-identity">
+            <span class="player-number">07</span>
+            <div>
+              <span class="eyebrow">TU JUGADOR</span
+              ><strong>Adrián Rivera</strong>
+            </div>
+            <span class="player-role">PRÁCTICA</span>
+          </div>
+          <div class="power-heading">
+            <span id="power-state">LISTO PARA LANZAR</span
+            ><output id="power-value">0%</output>
+          </div>
+          <div
+            id="power"
+            class="power-track"
+            role="progressbar"
+            aria-label="Potencia del tiro"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+          >
+            <div id="ideal-band"></div>
+            <div id="power-fill"></div>
+          </div>
+          <div class="power-legend">
+            <span><i></i> BAJA</span><span><i></i> IDEAL*</span
+            ><span><i></i> EXCESIVA</span>
+          </div>
+        </div>
+        <div class="court-caption hud">
+          TRAINING CENTER <span>01 / CANCHA PRINCIPAL</span>
+        </div>
+      </section>
+      <section class="control-dock">
+        <div class="keyboard-help">
+          <span class="key-group"
+            ><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span
+          ><span>Moverte</span><span class="divider"></span
+          ><span class="mouse-icon" aria-hidden="true"
+            ><svg viewBox="0 0 16 22" fill="none">
+              <rect
+                x="2"
+                y="1"
+                width="12"
+                height="20"
+                rx="6"
+                stroke="currentColor"
+              />
+              <path d="M8 1v9H2" stroke="currentColor" /></svg></span
+          ><span>Apuntar con mouse</span>
+        </div>
+        <p id="hint">Mantén clic izquierdo para cargar y suelta para tirar.</p>
+        <button id="shoot">
+          Lanzar
+          <span class="launch-icon" aria-hidden="true"
+            ><svg viewBox="0 0 18 18" fill="none">
+              <path
+                d="M4 14L14 4M5 4h9v9"
+                stroke="currentColor"
+                stroke-width="1.5"
+              /></svg
+          ></span>
+        </button>
+      </section>
+      <details class="settings">
+        <summary>Ajustes de apuntado <span>+</span></summary>
+        <div class="aim-controls">
+          <label
+            >Dirección <output id="direction-value">0°</output
+            ><input
+              id="direction"
+              type="range"
+              min="-180"
+              max="180"
+              value="0" /></label
+          ><label
+            >Elevación <output id="angle-value">55°</output
+            ><input id="angle" type="range" min="40" max="70" value="55"
+          /></label>
+        </div>
+        <p>
+          *La zona ideal es una referencia de potencia según distancia y
+          elevación. También debes acertar la dirección.
+        </p>
+      </details>
+      <footer>
+        <span>BASELINE / PRÁCTICA DE TIRO</span
+        ><span>Cursor libre · Recuperación automática del balón</span>
       </footer>
-      <p class="note">
-        Mueve el mouse sobre la cancha para apuntar · Mantén clic izquierdo o
-        Lanzar y suelta para tirar · Sin captura del cursor · El balón vuelve
-        automáticamente a tus manos.
-      </p>
     </main>
     <script type="module" src="src/main.js"></script>
   </body>

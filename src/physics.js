@@ -1,3 +1,4 @@
+import { heldPosition } from "./pose.js";
 import { config as c } from "./config.js";
 export function velocity(power, yaw = 0, angle = c.angle) {
   const speed = c.minForce + (c.maxForce - c.minForce) * power,
@@ -10,15 +11,23 @@ export function velocity(power, yaw = 0, angle = c.angle) {
 }
 export class Shot {
   constructor() {
+    this.stats = { points: 0, made: 0, attempts: 0, lastResult: null };
     this.player = { ...c.player };
     this.aim = { yaw: 0, angle: c.angle };
     this.reset();
   }
   origin() {
+    const held = heldPosition(this);
     return {
-      x: this.player.x + Math.sin(this.aim.yaw) * 0.38,
-      y: c.initial.y,
-      z: this.player.z + Math.cos(this.aim.yaw) * 0.38,
+      x:
+        this.player.x +
+        Math.sin(this.aim.yaw) * held.z +
+        Math.cos(this.aim.yaw) * (held.x ?? 0),
+      y: held.y,
+      z:
+        this.player.z +
+        Math.cos(this.aim.yaw) * held.z -
+        Math.sin(this.aim.yaw) * (held.x ?? 0),
     };
   }
   hold() {
@@ -42,7 +51,18 @@ export class Shot {
   }
   release() {
     if (this.phase !== "charging") return false;
-    this.launch = { power: this.power, ...this.aim, origin: this.origin() };
+    this.launch = {
+      power: this.power,
+      ...this.aim,
+      held: heldPosition(this),
+      hoop: { ...(this.targetHoop ?? c.hoop) },
+      origin: {
+        x: this.player.x + Math.sin(this.aim.yaw) * 0.38,
+        y: c.initial.y,
+        z: this.player.z + Math.cos(this.aim.yaw) * 0.38,
+      },
+    };
+    this.stats.attempts++;
     this.phase = "windup";
     this.time = 0;
     return true;
@@ -52,7 +72,7 @@ export class Shot {
   }
   step(dt) {
     this.time += dt;
-    if (["ready", "charging"].includes(this.phase)) this.hold();
+    if (["ready", "charging", "windup"].includes(this.phase)) this.hold();
     if (this.phase === "charging") {
       this.power = Math.min(1, this.time / c.chargeSeconds);
       return;
@@ -126,6 +146,9 @@ export class Shot {
           h.radius - r
         ) {
           this.scored = true;
+          this.stats.made++;
+          this.stats.points += 2;
+          this.stats.lastResult = "¡Canasta!";
         }
       }
     }
@@ -141,6 +164,7 @@ export class Shot {
     if (slow || this.time > c.maxFlight) {
       this.phase = "result";
       this.result = this.scored ? "¡Canasta!" : "Fallaste";
+      this.stats.lastResult = this.result;
       this.time = 0;
     }
   }

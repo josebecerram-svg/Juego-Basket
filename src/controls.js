@@ -97,8 +97,5 @@ export function bindControls(button, shot, canvas, movement) {
     angle.value = Math.round((shot.aim.angle * 180) / Math.PI);
     document.querySelector("#direction-value").textContent = yaw.value + "°";
     document.querySelector("#angle-value").textContent = angle.value + "°";
-    document.querySelector("#power").value = shot.power;
-    document.querySelector("#power-value").textContent =
-      Math.round(shot.power * 100) + " %";
   };
 }

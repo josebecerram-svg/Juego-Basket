@@ -38,7 +38,10 @@ test("three attempts: held ball, release from hands, exclusive flight and reset"
   for (let attempt = 0; attempt < 3; attempt++) {
     assert.ok(s.charge());
     s.step(0.4167 * c.chargeSeconds);
-    assert.deepEqual({ x: s.ball.x, y: s.ball.y, z: s.ball.z }, c.initial);
+    assert.deepEqual(
+      { x: s.ball.x, y: s.ball.y, z: s.ball.z },
+      { ...c.initial, y: 1.95 },
+    );
     assert.ok(s.release());
     assert.equal(s.charge(), false);
     s.step(c.windup);
@@ -119,8 +122,8 @@ test("moving origin follows player and direction, flight remains independent, re
   s.player.z = -3;
   s.aim.yaw = Math.PI / 2;
   s.step(0.01);
-  assert.ok(Math.abs(s.ball.x - 2.38) < 1e-8);
-  assert.ok(Math.abs(s.ball.z + 3) < 1e-8);
+  assert.ok(Math.abs(s.ball.x - 2.42) < 1e-8);
+  assert.ok(Math.abs(s.ball.z + 3.24) < 1e-8);
   s.charge();
   s.power = 0.4;
   s.release();
@@ -131,7 +134,7 @@ test("moving origin follows player and direction, flight remains independent, re
   assert.ok(s.ball.x > start.x);
   assert.equal(s.ball.z, start.z);
   s.reset();
-  assert.ok(Math.abs(s.ball.x + 1.62) < 1e-8);
+  assert.ok(Math.abs(s.ball.x + 1.58) < 1e-8);
   assert.equal(s.player.x, -2);
 });
 

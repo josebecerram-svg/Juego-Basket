@@ -9,6 +9,8 @@ export function createCamera() {
     camera,
     update(w, h, shot, dt) {
       camera.aspect = w / h;
+      const portrait = w / h < 1.25;
+      camera.setViewOffset(w, h, portrait ? 0 : -w * 0.12, 0, w, h);
       camera.updateProjectionMatrix();
       // Fit player, active hoop and ball; the camera always remains behind and above.
       const targetHoop = shot.targetHoop ?? c.hoop;
@@ -47,14 +49,15 @@ export function createCamera() {
       ).normalize();
       const up = new T.Vector3().crossVectors(direction, right).normalize();
       const tanY = Math.tan((camera.fov * Math.PI) / 360),
-        tanX = tanY * camera.aspect;
+        tanX = tanY * camera.aspect * (portrait ? 0.88 : 0.72);
+      const safeTanY = tanY * (portrait ? 0.4 : 0.86);
       let distance = 6;
       for (const point of points) {
         const d = point.clone().sub(center);
         distance = Math.max(
           distance,
           Math.abs(d.dot(right)) / tanX + d.dot(direction) + 1.4,
-          Math.abs(d.dot(up)) / tanY + d.dot(direction) + 1.4,
+          Math.abs(d.dot(up)) / safeTanY + d.dot(direction) + 1.4,
         );
       }
       lastDistance = initialized

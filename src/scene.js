@@ -85,13 +85,13 @@ export function createScene(canvas) {
           ),
           pts = [];
         for (let t = 0; t < 2; t += 0.04) {
-          const y = shot.origin().y + v.vy * t - 0.5 * c.gravity * t * t;
+          const y = c.initial.y + v.vy * t - 0.5 * c.gravity * t * t;
           if (y < 0.12) break;
           pts.push(
             new T.Vector3(
-              shot.origin().x + v.vx * t,
+              shot.player.x + Math.sin(shot.aim.yaw) * 0.38 + v.vx * t,
               y,
-              shot.origin().z + v.vz * t,
+              shot.player.z + Math.cos(shot.aim.yaw) * 0.38 + v.vz * t,
             ),
           );
         }

@@ -1,3 +1,4 @@
+import { createHud } from "./hud.js";
 import { Movement } from "./movement.js";
 import { config as c } from "./config.js";
 import { Shot } from "./physics.js";
@@ -15,6 +16,7 @@ try {
       canvas,
       movement,
     );
+  const updateHud = createHud();
   let last = performance.now(),
     accumulator = 0;
   function frame(now) {
@@ -36,14 +38,7 @@ try {
       accumulator -= 1 / 240;
     }
     updateControls();
-    document.querySelector(".feedback").textContent =
-      shot.result ??
-      {
-        ready: "Listo para lanzar",
-        charging: "Cargando potencia…",
-        windup: "Preparando el tiro…",
-        flight: "Balón en el aire…",
-      }[shot.phase];
+    updateHud(shot);
     document.querySelector("#hint").textContent =
       shot.phase === "ready"
         ? "WASD para moverte · Mouse para apuntar · Mantén clic izquierdo y suelta."

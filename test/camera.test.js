@@ -42,3 +42,46 @@ test("third person frames the player, nearest hoop and airborne ball across cour
         assert.ok(rig.camera.position.distanceTo(new T.Vector3(x, 1.7, z)) > 3);
       }
 });
+
+test("HUD stays clear of the player and hoop in desktop and portrait compositions", () => {
+  for (const [w, h] of [
+    [1160, 660],
+    [358, 600],
+  ])
+    for (const [x, z] of [
+      [0, -0.38],
+      [7, 5],
+      [-7, -21],
+      [0, -9],
+    ])
+      for (const yaw of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+        const shot = new Shot();
+        shot.player = { x, z };
+        shot.aim.yaw = yaw;
+        shot.targetHoop = z < -8.2 ? c.baskets[1].hoop : c.hoop;
+        const rig = createCamera();
+        rig.update(w, h, shot, 1 / 60);
+        rig.camera.updateMatrixWorld();
+        const portrait = w / h < 1.25,
+          hudRight = portrait ? 228 : 308,
+          topBottom = portrait ? 140 : 164,
+          bottomTop = h - (portrait ? 144 : 164);
+        const points = [
+          [x - 0.3, 0, z],
+          [x + 0.3, 0, z],
+          [x - 0.3, 2.2, z],
+          [x + 0.3, 2.2, z],
+          [shot.targetHoop.x, 3.05, shot.targetHoop.z],
+          [shot.targetHoop.x, 4, shot.targetHoop.z],
+        ];
+        for (const point of points) {
+          const p = new T.Vector3(...point).project(rig.camera),
+            sx = ((p.x + 1) * w) / 2,
+            sy = ((1 - p.y) * h) / 2;
+          assert.ok(
+            !(sx < hudRight && (sy < topBottom || sy > bottomTop)),
+            JSON.stringify({ w, h, point, sx, sy, yaw }),
+          );
+        }
+      }
+});
