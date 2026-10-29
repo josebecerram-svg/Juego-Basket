@@ -40,6 +40,16 @@ La ambientación sigue siendo original de Baseline: parquet claro con respuesta 
 
 Los pases, tiros y el cambio automático al receptor no se rediseñan en esta etapa. No se añaden movimientos especiales ni combinaciones. Los movimientos especiales y los diseños futuros de pase/tiro siguen pendientes de instrucciones específicas; el acabado anatómico y las animaciones continúan siendo procedurales, sin captura de movimiento.
 
+## Atletas originales · versión 08
+
+Rivera mide 1,96 m y presenta una silueta ligera, piel cálida, cabello corto y camiseta marfil. Silva mide 2,06 m, tiene hombros más anchos, piel oscura, cabello rizado corto, perilla y equipación azul con ribetes arena. Son identidades originales: las referencias generales son la agilidad de un exterior y la presencia física de un jugador interior, sin copiar rostros, nombres, marcas, tatuajes ni uniformes reales.
+
+Las proporciones se ajustan por anatomía, no escalando el modelo completo: se mantienen los pies en el suelo y las manos en las posiciones del balón compartidas con la física. Los contornos musculares, mandíbula, pómulos, párpados, iris, nariz, labios, orejas y cabello están modelados en geometría. Los uniformes incorporan tejido, pliegues suaves y dorsales adaptados a la superficie curva. Las zapatillas tienen collar acolchado, lengüeta, talón, cordones y suela segmentada. Los dedos tienen segmentos articulados que se flexionan al sostener y soltar el balón.
+
+Los hombros acompañan la inclinación y contrarrotación del torso; la mirada sigue el balón durante su vuelo y en el compañero, con giro limitado y amortiguado del cuello y parpadeo desfasado por personaje. Se conservan los apoyos de pies y la mezcla gradual de movimiento. Cada modelo mantiene su identidad al cambiar el control y la interfaz conserva nombre y dorsal del actor activo. No se modifica la física de pases/tiros, la cámara ni los controles.
+
+El acabado es procedural y todavía estilizado: no equivale a un personaje fotorrealista escaneado ni a una animación con captura de movimiento. El detalle facial fino y la deformación de tela mediante simulación quedan pendientes.
+
 ## Jugador e interfaz
 
 Adrián Rivera (07) y Mateo Silva (12): modelos humanos procedurales con proporciones anatómicas, rostro, manos, camiseta sin mangas con nombre y dorsal, pantalón, calcetines y zapatillas con suela y cordones. Animaciones articuladas de carrera y frenado, giro al apuntar, flexión de rodillas y elevación del balón al cargar, extensión y gesto de muñeca al soltar. El balón pasa de una posición de preparación al lado del pecho a la posición de salida sobre la cabeza.
@@ -57,6 +67,7 @@ La potencia es azul en la zona baja, verde lima en la zona ideal y coral en la z
 - `physics.js`: balón en manos, carga, suelta desde una posición dinámica, trayectoria 3D, colisiones con ambos tableros y aros y suelo. La canasta exige un cruce descendente dentro de la abertura, antes del primer contacto con el suelo, una sola vez por intento.
 - `camera.js`: seguimiento cercano desde atrás, amortiguación de posición/giro/altura, volumen de seguridad y alternativas de hombro frente a obstáculos. Prioriza al controlado y evita el zoom panorámico.
 - `gym.js`: parquet procedural, pintura, líneas, canastas, gradas e iluminación interior.
+- `athletes.js`: perfiles visuales originales, estatura, complexión, rostro y equipación de cada actor.
 - `player.js`: modelo anatómico, equipación y articulaciones; brazos con cinemática inversa para mantener las manos en el balón.
 - `pose.js`: preparación, carga, lanzamiento y transición de la postura al correr y detenerse. Comparte la posición del balón con la física.
 - `hud.js`: marcador de práctica, último resultado y referencia de potencia según distancia/elevación.
@@ -75,6 +86,6 @@ Modelo humano procedural estilizado, sin escaneo fotográfico ni captura de movi
 
 ## Publicación y caché
 
-La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **07**.
+La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **08**.
 
 Después de modificar archivos, ejecuta `npm run version:assets` y luego `npm test` antes de subir a `main`. `npm run dev` actualiza automáticamente las versiones al arrancar. La comprobación de pruebas detecta recursos modificados sin actualizar su identificador. GitHub Pages sigue publicando desde la raíz de `main`, sin compilación externa. Para una primera carga después de una actualización, añade `?release=IDENTIFICADOR` a la URL del juego; esto renueva el documento HTML además de sus módulos.

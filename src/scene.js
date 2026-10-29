@@ -3,6 +3,7 @@ import * as T from "../vendor/three.module.js";
 import { config as c } from "./config.js";
 import { createCamera } from "./camera.js";
 import { createPlayer } from "./player.js";
+import { athletes } from "./athletes.js";
 import { velocity } from "./physics.js";
 export function createScene(canvas) {
   const renderer = new T.WebGLRenderer({ canvas, antialias: true });
@@ -65,12 +66,8 @@ export function createScene(canvas) {
     ball.add(seam);
   }
   const models = {
-    rivera: createPlayer(scene),
-    silva: createPlayer(scene, {
-      name: "SILVA",
-      number: "12",
-      skin: "#c99773",
-    }),
+    rivera: createPlayer(scene, athletes.rivera),
+    silva: createPlayer(scene, athletes.silva),
   };
   function marker(color) {
     const m = new T.Mesh(
@@ -140,11 +137,18 @@ export function createScene(canvas) {
       renderer.setSize(w, h, false);
       rig.update(w, h, shot, dt);
       models[shot.player.id].update(shot, dt);
-      models[shot.companion.id].update(shot.companionState(), dt);
+      models[shot.companion.id].update(
+        { ...shot.companionState(), gazeTarget: shot.ball },
+        dt,
+      );
       for (const actor of shot.actors)
         for (const role of ["TÚ", "IA"]) {
           const label = labels[actor.id][role];
-          label.position.set(actor.x, 2.18, actor.z);
+          label.position.set(
+            actor.x,
+            athletes[actor.id].height + 0.26,
+            actor.z,
+          );
           label.visible = (actor === shot.player) === (role === "TÚ");
         }
       companionMarker.position.set(shot.companion.x, 0.04, shot.companion.z);
