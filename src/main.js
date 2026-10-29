@@ -21,17 +21,7 @@ try {
     accumulator += dt;
     last = now;
     while (accumulator >= 1 / 240) {
-      const movement = shot.movement;
-      movement.yaw = shot.phase === "windup" ? shot.launch.yaw : shot.aim.yaw;
-      movement.facingTarget =
-        shot.pass && ["passWindup", "passing", "receive"].includes(shot.phase)
-          ? Math.atan2(
-              shot.companion.x - shot.player.x,
-              shot.companion.z - shot.player.z,
-            )
-          : undefined;
-      movement.step(1 / 240, shot.phase);
-      shot.bodyYaw = movement.bodyYaw;
+      shot.updateMovement(1 / 240);
       shot.targetHoop = c.baskets.reduce(
         (best, b) =>
           Math.hypot(b.hoop.x - shot.player.x, b.hoop.z - shot.player.z) <

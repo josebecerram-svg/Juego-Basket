@@ -4,7 +4,7 @@ export const athletes = {
     name: "RIVERA",
     number: "07",
     height: 1.96,
-    build: 0.97,
+    build: 1.04,
     skin: "#ad7757",
     hair: "#211b19",
     hairStyle: "crop",

@@ -1,5 +1,6 @@
 import { Shot } from "./physics.js";
-import { Movement } from "./movement.js";
+import { Movement, angleDelta } from "./movement.js";
+import { emptyHands, passFollow, smooth } from "./pose.js";
 import { config as c } from "./config.js";
 const mix = (a, b, t) => a + (b - a) * t;
 export class Practice extends Shot {
@@ -32,10 +33,14 @@ export class Practice extends Shot {
   reset() {
     this.possession = "player";
     this.pass = null;
+    for (const actor of this.actors ?? []) actor.gesture = null;
     super.reset();
   }
   get hasBall() {
     return this.possession === "player";
+  }
+  get action() {
+    return this.player.gesture;
   }
   get passPose() {
     return this.handFor("player");
@@ -43,27 +48,35 @@ export class Practice extends Shot {
   handFor(person) {
     const sender = this.pass?.sender,
       receiver = this.pass?.receiver;
-    const empty = { x: 0, y: 1.15, z: 0.12, spread: 0.16 };
+    const actor = person === "player" ? this.player : this.companion;
+    const empty = emptyHands();
+    if (actor?.gesture?.kind === "passFollow")
+      return passFollow(actor.gesture.time);
+    if (this.phase === "passWindup" && receiver === person) {
+      const t = smooth(this.time / c.passing.preparation);
+      return {
+        x: 0,
+        y: mix(1.15, 1.45, t),
+        z: mix(0.12, 0.3, t),
+        spread: 0.16 * (1 - t),
+      };
+    }
     if (this.phase === "passWindup" && sender === person) {
-      const t = Math.min(1, this.time / c.passing.preparation);
+      const t = smooth(
+        (this.pass.motionTime ?? this.time) / c.passing.preparation,
+      );
       return {
         x: 0.24 * (1 - t),
         y: 1.5 - 0.05 * t,
-        z: 0.42 - 0.12 * Math.sin(t * Math.PI),
+        z:
+          0.42 -
+          0.12 * Math.sin(t * Math.PI) +
+          0.14 * smooth((t - 0.45) / 0.55),
       };
     }
     if (this.phase === "passing") {
-      if (sender === person) {
-        const t = Math.min(1, this.time / 0.4);
-        return {
-          x: 0,
-          y: 1.45 - 0.3 * t,
-          z: 0.56 - 0.4 * t,
-          spread: 0.04 + 0.12 * t,
-        };
-      }
       if (receiver === person) {
-        const t = Math.min(1, this.time / this.pass.duration);
+        const t = smooth(this.time / this.pass.duration);
         return { x: 0, y: 1.45, z: 0.3 + 0.12 * t, spread: 0 };
       }
     }
@@ -128,7 +141,9 @@ export class Practice extends Shot {
       return this.notify("Acércate al compañero para pasar (máx. 12 m).");
     const sender = "player",
       receiver = "companion";
-    this.pass = { sender, receiver };
+    this.pass = { sender, receiver, motionTime: 0 };
+    this.player.gesture = { kind: "passPrepare", time: 0 };
+    this.companion.gesture = { kind: "catchReady", time: 0 };
     this.phase = "passWindup";
     this.time = 0;
     this.power = 0;
@@ -155,6 +170,7 @@ export class Practice extends Shot {
     this.movement.yaw = this.bodyYaw;
     this.supporting = false;
     this.controlChanges++;
+    this.player.gesture = { kind: "catch", time: 0 };
     this.possession = "player";
     this.phase = "receive";
     this.time = 0;
@@ -199,6 +215,19 @@ export class Practice extends Shot {
     );
     m.step(dt, "ready");
   }
+  updateMovement(dt) {
+    const m = this.movement;
+    m.yaw = this.phase === "windup" ? this.launch.yaw : this.aim.yaw;
+    m.facingTarget =
+      this.pass && ["passWindup", "passing", "receive"].includes(this.phase)
+        ? Math.atan2(
+            this.companion.x - this.player.x,
+            this.companion.z - this.player.z,
+          )
+        : undefined;
+    m.step(dt, this.phase);
+    this.bodyYaw = m.bodyYaw;
+  }
   companionState() {
     return {
       player: this.companion,
@@ -210,9 +239,20 @@ export class Practice extends Shot {
       power: 0,
       hasBall: this.possession === "companion",
       passPose: this.handFor("companion"),
+      action: this.companion.gesture,
     };
   }
   step(dt) {
+    for (const actor of this.actors)
+      if (actor.gesture) {
+        actor.gesture.time += dt;
+        if (
+          (actor.gesture.kind === "passFollow" && actor.gesture.time > 0.7) ||
+          (actor.gesture.kind === "catch" &&
+            actor.gesture.time >= c.passing.catchTime)
+        )
+          actor.gesture = null;
+      }
     if (this.noticeTime > 0) {
       this.noticeTime = Math.max(0, this.noticeTime - dt);
       if (!this.noticeTime) this.notice = "";
@@ -220,9 +260,19 @@ export class Practice extends Shot {
     this.updateCompanion(dt);
     if (this.phase === "passWindup") {
       this.time += dt;
+      const targetYaw = Math.atan2(
+        this.companion.x - this.player.x,
+        this.companion.z - this.player.z,
+      );
+      const delta =
+        this.bodyYaw === undefined
+          ? 0
+          : Math.abs(angleDelta(this.bodyYaw, targetYaw));
+      if (delta < 0.4) this.pass.motionTime += dt;
+      this.player.gesture.time = this.pass.motionTime;
       const hand = this.handFor(this.pass.sender);
       Object.assign(this.ball, this.pointFor(this.pass.sender, hand));
-      if (this.time >= c.passing.preparation) {
+      if (this.pass.motionTime >= c.passing.preparation && delta < 0.12) {
         const target = this.pointFor(this.pass.receiver, {
             x: 0,
             y: 1.45,
@@ -236,6 +286,7 @@ export class Practice extends Shot {
           arc: 0.18 + d * 0.035,
           target,
         });
+        this.player.gesture = { kind: "passFollow", time: 0 };
         this.phase = "passing";
         this.possession = "air";
         this.time = 0;
@@ -277,6 +328,7 @@ export class Practice extends Shot {
         } else {
           for (const a of ["x", "y", "z"])
             this.ball["v" + a] = (this.ball[a] - previous[a]) / dt;
+          this.companion.gesture = null;
           this.phase = "passMiss";
           this.time = 0;
           this.possession = "air";

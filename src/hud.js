@@ -93,7 +93,7 @@ export function createHud() {
         passMiss: "Pase no recibido",
       }[shot.phase];
     $("#possession").textContent =
-      shot.possession === "player"
+      shot.possession === "player" || shot.phase === "windup"
         ? shot.player.number + " · " + shot.player.name
         : shot.possession === "companion"
           ? shot.companion.number + " · " + shot.companion.name

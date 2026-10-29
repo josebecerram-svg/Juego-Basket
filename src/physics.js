@@ -1,4 +1,4 @@
-import { heldPosition } from "./pose.js";
+import { heldPosition, playerPose } from "./pose.js";
 import { config as c } from "./config.js";
 export function velocity(power, yaw = 0, angle = c.angle) {
   const speed = c.minForce + (c.maxForce - c.minForce) * power,
@@ -60,6 +60,7 @@ export class Shot {
       yaw: this.aimYaw(),
       held: heldPosition(this),
       crouch: Math.min(1, this.time / 0.4),
+      crouchDepth: playerPose(this).crouch,
       hoop: { ...(this.targetHoop ?? c.hoop) },
       origin: {
         x: this.player.x + Math.sin(this.aimYaw()) * 0.38,

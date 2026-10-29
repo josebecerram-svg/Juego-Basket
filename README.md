@@ -40,9 +40,19 @@ La ambientación sigue siendo original de Baseline: parquet claro con respuesta 
 
 Los pases, tiros y el cambio automático al receptor no se rediseñan en esta etapa. No se añaden movimientos especiales ni combinaciones. Los movimientos especiales y los diseños futuros de pase/tiro siguen pendientes de instrucciones específicas; el acabado anatómico y las animaciones continúan siendo procedurales, sin captura de movimiento.
 
+## Gestos continuos · versión 09
+
+Se conservan las identidades originales de Rivera y Silva, con equipaciones marfil/azul sin logotipos; el frontal lleva solo el dorsal. Rivera gana desarrollo atlético proporcionado en hombros y piernas. Ambos usan contornos musculares interpolados, cara esculpida continua (sin esferas superpuestas en mandíbula/pómulos), cavidades orbitales, una línea de cabello más alta y microrrelieve de piel generado localmente. Se mantienen rostros, peinados, colores y estaturas distintos, ropa con pliegues, dedos articulados y zapatillas sin marcas.
+
+**Pase:** E hace frenar gradualmente al pasador y orientar el cuerpo hacia el receptor; la mirada anticipa ese giro. La preparación comienza al completar la mayor parte del giro, lleva el balón al pecho y extiende los brazos. La trayectoria arranca exactamente en el anclaje compartido de las manos. El receptor flexiona las piernas y abre las manos progresivamente, absorbe la recepción y acerca el balón al costado. Cada actor conserva un reloj de gesto propio, por lo que el pasador termina el seguimiento aunque ya sea IA después del cambio de control. Un pase fallido cancela la espera de recepción y no cambia de jugador.
+
+**Tiro:** la profundidad de flexión depende de la carga y se conserva al soltar el botón; incluso un toque breve tiene una pequeña preparación. La extensión de piernas acompaña la elevación del balón hasta la misma salida física anterior. Las palmas se orientan hacia su superficie y conservan el contacto durante toda la preparación. Tras la suelta, la muñeca se flexiona gradualmente, la mano de guía baja antes que el brazo lanzador y la postura se recupera con suavidad. Se mantiene la potencia/dirección elegida y la física de tiro existente; no se añade asistencia para encestar.
+
+`test/animation.test.js` comprueba orientación antes del pase, continuidad del contacto antes/después de la suelta, recepción, fallo sin transferencia, flexión/extensión de piernas y tiros de potencia baja/media/alta en varias direcciones. En Chromium también se miden las palmas renderizadas respecto al balón, se revisan las fases de pase/tiro y se verifican canasta, fallo, movimiento, nombres y cambios de control en ambos sentidos. El acabado continúa siendo procedural y estilizado, sin escaneo facial, simulación de tela ni captura de movimiento; la referencia deportiva es de calidad general y no se usan activos de NBA 2K ni semejanzas de atletas reales.
+
 ## Atletas originales · versión 08
 
-Rivera mide 1,96 m y presenta una silueta ligera, piel cálida, cabello corto y camiseta marfil. Silva mide 2,06 m, tiene hombros más anchos, piel oscura, cabello rizado corto, perilla y equipación azul con ribetes arena. Son identidades originales: las referencias generales son la agilidad de un exterior y la presencia física de un jugador interior, sin copiar rostros, nombres, marcas, tatuajes ni uniformes reales.
+Rivera mide 1,96 m y presenta una silueta atlética, piel cálida, cabello corto y camiseta marfil. Silva mide 2,06 m, tiene hombros más anchos, piel oscura, cabello rizado corto, perilla y equipación azul con ribetes arena. Son identidades originales: las referencias generales son la agilidad de un exterior y la presencia física de un jugador interior, sin copiar rostros, nombres, marcas, tatuajes ni uniformes reales.
 
 Las proporciones se ajustan por anatomía, no escalando el modelo completo: se mantienen los pies en el suelo y las manos en las posiciones del balón compartidas con la física. Los contornos musculares, mandíbula, pómulos, párpados, iris, nariz, labios, orejas y cabello están modelados en geometría. Los uniformes incorporan tejido, pliegues suaves y dorsales adaptados a la superficie curva. Las zapatillas tienen collar acolchado, lengüeta, talón, cordones y suela segmentada. Los dedos tienen segmentos articulados que se flexionan al sostener y soltar el balón.
 
@@ -86,6 +96,6 @@ Modelo humano procedural estilizado, sin escaneo fotográfico ni captura de movi
 
 ## Publicación y caché
 
-La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **08**.
+La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **09**.
 
 Después de modificar archivos, ejecuta `npm run version:assets` y luego `npm test` antes de subir a `main`. `npm run dev` actualiza automáticamente las versiones al arrancar. La comprobación de pruebas detecta recursos modificados sin actualizar su identificador. GitHub Pages sigue publicando desde la raíz de `main`, sin compilación externa. Para una primera carga después de una actualización, añade `?release=IDENTIFICADOR` a la URL del juego; esto renueva el documento HTML además de sus módulos.

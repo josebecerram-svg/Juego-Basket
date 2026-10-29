@@ -1,7 +1,7 @@
 import * as T from "../vendor/three.module.js";
 import { config as c } from "./config.js";
 import { Footwork } from "./footwork.js";
-import { playerPose } from "./pose.js";
+import { playerPose, handPosition } from "./pose.js";
 import { athletes } from "./athletes.js";
 
 export function createPlayer(scene, profile = athletes.rivera) {
@@ -47,6 +47,26 @@ export function createPlayer(scene, profile = athletes.rivera) {
   const jersey = mat("#ffffff", 0.88);
   jersey.map = fabricTexture;
   skin.roughness = 0.58;
+  // Subtle local pore normals, no photographic likeness or external skin asset.
+  const pores = document.createElement("canvas");
+  pores.width = pores.height = 64;
+  const pc = pores.getContext("2d"),
+    pixels = pc.createImageData(64, 64);
+  for (let i = 0; i < 4096; i++) {
+    const x = i % 64,
+      y = Math.floor(i / 64),
+      v = Math.sin(x * 2.1 + y * 3.7) * Math.cos(y * 1.3 - x * 0.8);
+    pixels.data.set(
+      [128 + v * 10, 128 + Math.sin(x * 3.3 - y * 1.7) * 8, 254, 255],
+      i * 4,
+    );
+  }
+  pc.putImageData(pixels, 0, 0);
+  const poreTexture = new T.CanvasTexture(pores);
+  poreTexture.wrapS = poreTexture.wrapT = T.RepeatWrapping;
+  poreTexture.repeat.set(5, 5);
+  skin.normalMap = poreTexture;
+  skin.normalScale.set(0.12, 0.12);
   const clothShade = mat(new T.Color(profile.kit).multiplyScalar(0.86), 0.95);
   function add(parent, g, m, x = 0, y = 0, z = 0) {
     const o = new T.Mesh(g, m);
@@ -74,8 +94,10 @@ export function createPlayer(scene, profile = athletes.rivera) {
     return add(
       parent,
       new T.LatheGeometry(
-        rings.map(([r, y]) => new T.Vector2(r * bulk, y)),
-        20,
+        new T.SplineCurve(
+          rings.map(([r, y]) => new T.Vector2(r * bulk, y)),
+        ).getPoints(28),
+        28,
       ),
       m,
     );
@@ -167,7 +189,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
   body.add(head);
   head.name = "head";
   head.scale.set(profile.faceWidth, 1, 1);
-  const skull = new T.SphereGeometry(1, 40, 32);
+  const skull = new T.SphereGeometry(1, 64, 48);
   const vertices = skull.attributes.position;
   for (let i = 0; i < vertices.count; i++) {
     const y = vertices.getY(i),
@@ -175,12 +197,24 @@ export function createPlayer(scene, profile = athletes.rivera) {
       z = vertices.getZ(i);
     const jaw =
       y < -0.2 ? 1 - (1 - profile.jaw) * Math.min(1, (-y - 0.2) * 1.4) : 1;
-    vertices.setXYZ(i, x * 0.108 * jaw, y * 0.145, z * 0.103);
+    const px = x * 0.108 * jaw,
+      py = y * 0.145;
+    const bump = (cx, cy, sx, sy) =>
+      Math.exp(-(((px - cx) / sx) ** 2 + ((py - cy) / sy) ** 2));
+    // Continuous cheeks/chin and orbital recesses replace overlapping facial blobs.
+    const front = z > 0 ? Math.min(1, z * 4) : 0;
+    const sculpt =
+      0.009 *
+        (bump(-0.057, -0.025, 0.027, 0.027) +
+          bump(0.057, -0.025, 0.027, 0.027)) +
+      0.018 * bump(0, -0.079, 0.057, 0.039) -
+      0.004 *
+        (bump(-0.04, 0.016, 0.026, 0.014) + bump(0.04, 0.016, 0.026, 0.014));
+    vertices.setXYZ(i, px, py, z * 0.103 + sculpt * front);
   }
   skull.computeVertexNormals();
   add(head, skull, skin);
-  ellipsoid(head, skin, [0.08 * profile.jaw, 0.059, 0.066], 0, -0.066, 0.023);
-  ellipsoid(head, skin, [0.057, 0.035, 0.035], 0, -0.1, 0.067);
+
   const eyelids = [];
   // Brow, eyes, nose, ears and close-cropped hair define a human face.
   for (const side of [-1, 1]) {
@@ -222,7 +256,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
     );
     lid.scale.y = 0.001;
     eyelids.push(lid);
-    ellipsoid(head, skin, [0.031, 0.024, 0.024], side * 0.063, -0.026, 0.074);
+
     ellipsoid(
       head,
       skinShade,
@@ -244,12 +278,12 @@ export function createPlayer(scene, profile = athletes.rivera) {
   ellipsoid(
     head,
     skinShade,
-    [0.016 * profile.nose, 0.032, 0.023],
+    [0.014 * profile.nose, 0.029, 0.018],
     0,
     -0.018,
-    0.11,
+    0.104,
   );
-  ellipsoid(head, skin, [0.019 * profile.nose, 0.014, 0.019], 0, -0.033, 0.122);
+  ellipsoid(head, skin, [0.016 * profile.nose, 0.012, 0.013], 0, -0.033, 0.12);
   const lips = mat(new T.Color(profile.skin).multiplyScalar(0.72));
   ellipsoid(head, lips, [0.029, 0.004, 0.007], 0, -0.067, 0.105);
   ellipsoid(head, skin, [0.027, 0.005, 0.007], 0, -0.075, 0.103);
@@ -269,7 +303,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
   }
   const cap = add(
     head,
-    new T.SphereGeometry(1, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.43),
+    new T.SphereGeometry(1, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.37),
     hair,
   );
   cap.scale.set(0.115, 0.15, 0.111);
@@ -284,7 +318,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
     );
     const matrix = new T.Matrix4();
     for (let i = 0; i < 160; i++) {
-      const y = 0.15 + (0.85 * (i + 0.5)) / 160,
+      const y = 0.35 + (0.65 * (i + 0.5)) / 160,
         a = i * 2.39996323,
         r = Math.sqrt(1 - y * y);
       matrix.makeTranslation(
@@ -359,7 +393,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
     if (back) panel.rotation.y = Math.PI;
   }
   print(profile.name, profile.number, true);
-  print("BASELINE", profile.number, false);
+  print("", profile.number, false);
   const hips = new T.Group();
   group.add(hips);
   hips.scale.x = hips.scale.z = bulk;
@@ -375,10 +409,17 @@ export function createPlayer(scene, profile = athletes.rivera) {
   const legs = [];
   for (const side of [-1, 1]) {
     const short = limb(group, navy, 0.112, 0.12),
-      thigh = limb(group, skin, 0.086, 0.065),
-      shin = limb(group, skin, 0.057, 0.041);
+      thigh = limb(group, skin, 0.095, 0.065),
+      shin = limb(group, skin, 0.062, 0.041);
     short.geometry = foldGeometry(short.geometry, 0.025);
-    const knee = ellipsoid(group, skin, [0.063, 0.063, 0.063], 0, 0, 0);
+    const knee = ellipsoid(
+      group,
+      skin,
+      [0.063 * bulk, 0.063, 0.063 * bulk],
+      0,
+      0,
+      0,
+    );
     const foot = new T.Group();
     group.add(foot);
     foot.name = side < 0 ? "leftFoot" : "rightFoot";
@@ -452,12 +493,20 @@ export function createPlayer(scene, profile = athletes.rivera) {
   }
   const arms = [];
   for (const side of [-1, 1]) {
-    const shoulder = ellipsoid(group, skin, [0.078, 0.087, 0.085], 0, 0, 0);
+    const shoulder = ellipsoid(
+      group,
+      skin,
+      [0.08 * bulk, 0.087, 0.085 * bulk],
+      0,
+      0,
+      0,
+    );
     const upper = limb(group, skin, 0.067, 0.047),
       lower = limb(group, skin, 0.048, 0.034);
     const elbow = ellipsoid(group, skin, [0.047, 0.046, 0.045], 0, 0, 0);
     const hand = new T.Group();
     group.add(hand);
+    hand.name = side < 0 ? "leftHand" : "rightHand";
     ellipsoid(hand, skin, [0.037, 0.06, 0.022], 0, 0, 0);
     const fingers = [];
     for (let i = 0; i < 4; i++) {
@@ -544,6 +593,9 @@ export function createPlayer(scene, profile = athletes.rivera) {
         (shot.phase === "windup" ? shot.launch.yaw : shot.aim.yaw);
       const gazeTarget =
         shot.gazeTarget ??
+        (shot.phase === "passWindup" && shot.companion
+          ? { x: shot.companion.x, y: 1.8, z: shot.companion.z }
+          : null) ??
         (["flight", "passing", "passMiss"].includes(shot.phase)
           ? shot.ball
           : null);
@@ -582,11 +634,13 @@ export function createPlayer(scene, profile = athletes.rivera) {
           (motion?.ax ?? 0) * cosYaw - (motion?.az ?? 0) * sinYaw;
       const leanX =
         ((motion?.forward ?? 0) / c.movement.speed) * 0.07 +
-        accelerationForward * 0.009;
+        accelerationForward * 0.009 +
+        pose.torsoPitch;
       const leanZ =
         (-(motion?.lateral ?? 0) / c.movement.speed) * 0.05 -
         accelerationSide * 0.007;
-      const counterTurn = -(motion?.bodyTurnVelocity ?? 0) * 0.012;
+      const counterTurn =
+        -(motion?.bodyTurnVelocity ?? 0) * 0.012 + pose.torsoTwist;
       body.rotation.y += (counterTurn - body.rotation.y) * blend;
       body.rotation.x += (leanX - body.rotation.x) * blend;
       body.rotation.z += (leanZ - body.rotation.z) * blend;
@@ -673,11 +727,8 @@ export function createPlayer(scene, profile = athletes.rivera) {
             1.48 + raise / upperScale,
             0,
           ).applyMatrix4(body.matrix),
-          hand = new T.Vector3(
-            (pose.hand.x ?? 0) + side * (0.082 + (pose.hand.spread ?? 0)),
-            pose.hand.y - 0.045,
-            pose.hand.z - 0.015,
-          );
+          contact = handPosition(shot, pose, side),
+          hand = new T.Vector3(contact.x, contact.y, contact.z);
         if ((pose.hand.spread ?? 0) > 0.1) {
           const opposite = feet[side < 0 ? 1 : 0],
             dx = opposite.position.x - shot.player.x,
@@ -689,7 +740,9 @@ export function createPlayer(scene, profile = athletes.rivera) {
         }
         if (!arm.smoothedHand) arm.smoothedHand = hand.clone();
         const holding =
-          shot.hasBall !== false && !["flight", "result"].includes(shot.phase);
+          shot.phase === "windup" ||
+          (shot.hasBall !== false &&
+            !["flight", "result"].includes(shot.phase));
         arm.smoothedHand.lerp(hand, holding ? 1 : relax(dt * 14));
         hand.copy(arm.smoothedHand);
         const elbow = elbowPoint(shoulder, hand, side);
@@ -698,11 +751,34 @@ export function createPlayer(scene, profile = athletes.rivera) {
         segment(arm.upper, shoulder, elbow);
         segment(arm.lower, elbow, hand);
         arm.hand.position.copy(hand);
-        arm.hand.quaternion.setFromUnitVectors(
-          new T.Vector3(0, 1, 0),
-          hand.clone().sub(elbow).normalize(),
-        );
-        arm.hand.rotateX(pose.follow * 0.65);
+        const wristRotation = new T.Quaternion();
+        if (holding || shot.action?.kind === "catchReady") {
+          const normal = new T.Vector3(
+            (pose.hand.x ?? 0) - hand.x,
+            pose.hand.y - hand.y,
+            pose.hand.z - hand.z,
+          ).normalize();
+          const up = new T.Vector3(0, 1, 0)
+            .addScaledVector(normal, -normal.y)
+            .normalize();
+          const across = new T.Vector3().crossVectors(up, normal).normalize();
+          wristRotation.setFromRotationMatrix(
+            new T.Matrix4().makeBasis(across, up, normal),
+          );
+        } else {
+          wristRotation.setFromUnitVectors(
+            new T.Vector3(0, 1, 0),
+            hand.clone().sub(elbow).normalize(),
+          );
+          wristRotation.multiply(
+            new T.Quaternion().setFromAxisAngle(
+              new T.Vector3(1, 0, 0),
+              pose.wrist * (side > 0 ? 0.65 : 0.2),
+            ),
+          );
+        }
+        arm.hand.quaternion.slerp(wristRotation, blend);
+        arm.hand.userData.holding = holding;
         // Curl fingers around the ball, then relax progressively after release.
         for (const finger of arm.fingers) {
           const curl = holding

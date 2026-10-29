@@ -77,7 +77,7 @@ export class Movement {
       x = this.targetVelocity.x;
       z = this.targetVelocity.z;
     }
-    const preparing = phase === "windup";
+    const preparing = phase === "windup" || phase === "passWindup";
     if (preparing) x = z = 0;
     const braking = x * this.vx + z * this.vz < 0 || Math.hypot(x, z) < 0.01,
       limit = braking ? c.movement.deceleration : c.movement.acceleration;
