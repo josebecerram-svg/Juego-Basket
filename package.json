@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node scripts/version-assets.js --check && node --test",
+    "version:assets": "node scripts/version-assets.js",
+    "predev": "node scripts/version-assets.js"
   },
   "engines": {
     "node": ">=18"
