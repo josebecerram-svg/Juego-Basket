@@ -1,7 +1,7 @@
 import * as T from "../vendor/three.module.js";
 import { config as c } from "./config.js";
 import { Footwork } from "./footwork.js";
-import { playerPose, handPosition } from "./pose.js";
+import { playerPose, handPosition, smooth } from "./pose.js";
 import { athletes } from "./athletes.js";
 
 export function createPlayer(scene, profile = athletes.rivera) {
@@ -598,19 +598,40 @@ export function createPlayer(scene, profile = athletes.rivera) {
         shot.bodyYaw ??
         (shot.phase === "windup" ? shot.launch.yaw : shot.aim.yaw);
       const airborne = (shot.player.y ?? 0) > 0;
+      const sin = Math.sin(group.rotation.y),
+        cos = Math.cos(group.rotation.y);
+      if (airborne && !group.userData.airborne) {
+        group.userData.takeoff = footwork.feet.map((f) => {
+          const dx = (f.position?.x ?? shot.player.x) - shot.player.x,
+            dz = (f.position?.z ?? shot.player.z) - shot.player.z;
+          return {
+            x: dx * cos - dz * sin,
+            z: dx * sin + dz * cos,
+            y: f.position?.y ?? 0,
+            yaw: (f.yaw ?? group.rotation.y) - group.rotation.y,
+          };
+        });
+      }
       if (!airborne && group.userData.airborne)
         for (const foot of footwork.feet) foot.position = null;
       group.userData.airborne = airborne;
+      const tuck = smooth((shot.motion?.airTime ?? 0) / 0.14),
+        landing = smooth((shot.player.y ?? 0) / 0.2);
       const feet = airborne
-        ? [-1, 1].map((side) => ({
-            position: {
-              x: shot.player.x + Math.cos(group.rotation.y) * side * 0.12,
-              z: shot.player.z - Math.sin(group.rotation.y) * side * 0.12,
-              y: 0.04,
-            },
-            yaw: group.rotation.y,
-            pitch: -0.1,
-          }))
+        ? [-1, 1].map((side, i) => {
+            const from = group.userData.takeoff[i];
+            const x = from.x + (side * 0.12 - from.x) * tuck,
+              z = from.z + (-0.04 * landing - from.z) * tuck;
+            return {
+              position: {
+                x: shot.player.x + x * cos + z * sin,
+                z: shot.player.z + z * cos - x * sin,
+                y: from.y + (0.04 * landing - from.y) * tuck,
+              },
+              yaw: group.rotation.y + from.yaw * (1 - tuck),
+              pitch: -0.1 * tuck * landing,
+            };
+          })
         : footwork.update(dt, shot.player, group.rotation.y, shot.movement);
       // Lower the pelvis when a planted foot trails a sprint stop or court boundary.
       // This preserves contact without stretching a leg beyond its anatomical length.

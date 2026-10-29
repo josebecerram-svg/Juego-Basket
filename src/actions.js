@@ -6,6 +6,7 @@ export function createMotion() {
     dribblePhase: 0,
     jumpStage: "ground",
     jumpTime: 0,
+    airTime: 0,
     vy: 0,
     landing: 0,
     floorPulse: false,
@@ -26,9 +27,11 @@ export function stepMotion(actor, keys, phase, hasBall, movement, dt) {
     m.jumpTime += dt;
     if (m.jumpTime >= c.actions.jumpPreparation) {
       m.jumpStage = "air";
+      m.airTime = 0;
       m.vy = c.actions.jumpImpulse;
     }
   } else if (m.jumpStage === "air") {
+    m.airTime += dt;
     actor.y = (actor.y ?? 0) + m.vy * dt - 0.5 * c.gravity * dt * dt;
     m.vy -= c.gravity * dt;
     if (actor.y <= 0) {
