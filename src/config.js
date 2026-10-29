@@ -1,0 +1,1 @@
+export const config={gravity:9.81,force:7.3,angle:55*Math.PI/180,initial:{x:2.1,y:2.1},ballRadius:.12,restitution:.65,hoop:{x:6.4,y:3.05,radius:.24,tube:.025},board:{x:6.82,bottom:2.85,top:4.05},windup:.38,resetDelay:1.5,maxFlight:4};
