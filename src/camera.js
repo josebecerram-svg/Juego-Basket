@@ -29,7 +29,8 @@ export function sweepCamera(
 export function createCamera({ obstacles = [] } = {}) {
   const camera = new T.PerspectiveCamera(c.camera.fov, 1, 0.08, 100),
     anchor = new T.Vector3(),
-    anchorVelocity = new T.Vector3();
+    anchorVelocity = new T.Vector3(),
+    focus = new T.Vector3();
   const expandedObstacles = obstacles.map((box) =>
     box.clone().expandByScalar(c.camera.radius),
   );
@@ -159,11 +160,19 @@ export function createCamera({ obstacles = [] } = {}) {
         (shot.aim.angle - c.angle) * 0.5 +
         flight * 0.22;
       lookHeight += (targetHeight - lookHeight) * (1 - Math.exp(-dt * 10));
-      camera.lookAt(
+      const freeFocus = new T.Vector3(
         anchor.x + Math.sin(viewYaw) * lookAhead,
         lookHeight,
         anchor.z + Math.cos(viewYaw) * lookAhead,
       );
+      const lockedHoop =
+        shot.aimLock ?? (shot.dunk?.active ? shot.dunk.hoop : null);
+      const targetFocus = lockedHoop
+        ? new T.Vector3(lockedHoop.x, lockedHoop.y - 0.25, lockedHoop.z)
+        : freeFocus;
+      if (!initialized) focus.copy(targetFocus);
+      else focus.lerp(targetFocus, 1 - Math.exp(-dt * 7));
+      camera.lookAt(focus);
       initialized = true;
     },
   };

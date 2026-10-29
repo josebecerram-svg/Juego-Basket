@@ -1,4 +1,4 @@
-# Baseline · prototipo 11 · Acciones y control del balón
+# Baseline · prototipo 12 · Clavadas y apuntado libre
 
 Práctica de tiros y pases en tercera persona con Three.js, con Rivera (07) y Silva (12). Controlas a quien recibe el pase; el otro jugador actúa como compañero de apoyo de la computadora. Cancha interior de 15 × 28 m, parquet claro generado por código, zonas azules, líneas, dos tableros y aros a 3,05 m y graderías oscuras. La escena se construye con geometría 3D; no contiene una fotografía como fondo.
 
@@ -11,13 +11,23 @@ Para desarrollo local: Node.js >=18, `npm run dev` en la carpeta del proyecto, y
 ## Controles
 
 - **W:** avanzar hacia donde mira el personaje. **S:** retroceder. **A/D:** desplazarse a izquierda/derecha respecto a esa orientación. El movimiento limita aceleración, frenado y variación de aceleración, con giros progresivos y diagonales normalizadas. Mantener WASD mezcla caminar y trotar; **Shift** permite correr más rápido con aceleración gradual; los desplazamientos laterales y hacia atrás conservan un ritmo más corto y controlado. Se mantienen los límites de la cancha. El cuerpo acompaña la velocidad lateral y de retroceso; los pies mantienen puntos de apoyo en el mundo y alternan las zancadas.
-- **Mueve el mouse sobre la cancha:** ajusta directamente la dirección y la elevación. El cuerpo gira y la cámara acompaña suavemente desde atrás, por encima y ligeramente a un lado. La cámara cercana acompaña desde atrás y prioriza el cuerpo completo del jugador controlado; el aro y el balón se ven cuando quedan dentro del campo visual. Si salen de vista, un indicador orienta hacia ellos.
-- **Mantén clic izquierdo sobre la cancha:** carga potencia. **Suéltalo:** animación y lanzamiento. La carga llega al máximo en 1,6 segundos y se mantiene allí. No se necesita capturar ni bloquear el mouse; puedes salir de la cancha y usar la interfaz normalmente.
+- **Mueve el mouse sobre la cancha:** orientación relativa sin límite horizontal; puedes acumular vueltas completas. La elevación del tiro conserva su rango de 40–70°. La cámara sigue cerca, detrás y en tercera persona. **Capturar mouse · 360°** permite movimientos continuos sin alcanzar el borde del escritorio; **Esc** lo libera para usar la interfaz. La captura es opcional y requiere pulsar su botón. Sin captura puedes volver a entrar en la cancha y continuar orientando mediante nuevos movimientos.
+- **Mantén clic izquierdo sobre la cancha:** carga potencia. **Suéltalo:** animación y lanzamiento. El tiro normal carga hasta el máximo en 1,6 segundos. La clavada usa su propia ventana de potencia/tiempo; ver más abajo. Para usar la interfaz durante la captura, pulsa Esc.
 - También puedes ajustar **Dirección/Ángulo** con los deslizadores y mantener/soltar **Lanzar**, utilizable con mouse o pantalla táctil. La potencia se carga solo al mantener el botón izquierdo sobre la cancha o **Lanzar** (también mediante una pulsación táctil sostenida), nunca con E.
 - WASD no intercepta escritura ni controles cuando un campo o botón tiene el foco. Haz clic en la cancha para volver a controlarla. Al cambiar de ventana se cancelan la carga y las teclas retenidas.
 - Solo hay un balón. Puedes caminar durante la carga y el vuelo; el personaje frena progresivamente durante los 0,28 segundos de preparación y el balón sale desde la posición actual de sus manos. Al terminar el intento aparece **¡Canasta!** o **Fallaste**, y el balón vuelve automáticamente a la posición actual del jugador. No hace falta perseguirlo.
 
-Desde la posición inicial, **dirección 0°, ángulo 55° y potencia cercana al 42 %** permiten practicar una canasta. Al moverte, tendrás que ajustar dirección y potencia. La guía es orientativa: muestra una parábola ideal sin rebotes y, antes de cargar, representa una potencia de referencia del 42 %.
+Desde la posición inicial, **dirección 0°, ángulo 55° y potencia cercana al 42 %** permiten practicar una canasta. Al moverte, tendrás que ajustar dirección y potencia. No se muestra flecha de dirección ni parábola predictiva; debes estimar el tiro. El clic derecho fija o libera el aro visible más cercano, sin cargar ni disparar.
+
+## Clavada y fijación del aro · versión 12
+
+**Cómo practicar la clavada:** corre hacia el aro con **Shift + W**, entra en la pintura azul, pulsa **Espacio** y mantén **clic izquierdo**. El salto debe comenzar dentro del rectángulo azul (4,9 × 5,8 m) con posesión, carrera real de al menos 3,8 m/s y el aro a 2,6 m como máximo; al activar la clavada también debe continuar al alcance y dentro de los primeros 450 ms de vuelo. También puedes mantener el clic mientras te aproximas y pulsar Espacio en esas condiciones. Si no las cumples, el clic sigue cargando el tiro normal.
+
+La barra cambia a **CLAVADA · SUELTA EN VERDE**. La zona verde abarca 48–68 % de una carga de 0,8 s (aprox. 0,38–0,54 s desde la activación). Soltar dentro completa la extensión del brazo y coloca la suelta vertical en el centro del aro: la canasta se registra mediante el cruce físico descendente, una sola vez, y suma 2 puntos. Fuera de verde se libera el balón desde las manos con una desviación y sigue las colisiones normales; no se concede la canasta. Mantener más de 1,05 s o cancelar por pérdida de foco hace fallar el intento. No hay otro salto, pase, amague o tiro durante la acción y el aterrizaje. La aproximación, elevación y colocación final de una clavada válida tienen asistencia de animación; no se modifica el apuntado ni la física del tiro normal.
+
+**Clic derecho:** fija el aro visible más cercano dentro de 22 m. Un aviso discreto muestra **ARO FIJADO**; el cuerpo y la cámara lo siguen suavemente mientras WASD mantiene el movimiento. Otro clic derecho libera la mira. Si el aro queda fuera del encuadre, oculto por elementos sólidos del gimnasio o fuera del alcance durante 250 ms, se libera con aviso y transición suave. El tablero transparente permite ver el objetivo. El clic derecho no dispara ni cambia la posesión; la elevación de tiro sigue siendo configurable. No quedan flechas ni trayectorias predictivas en la escena.
+
+Pruebas nuevas cubren ambas canastas, condiciones ausentes, tiro normal de respaldo, sueltas verdes/tempranas/tardías, tiempo agotado/cancelación, manos sincronizadas y aterrizaje. También se verifican vueltas completas acumuladas, elección visible del objetivo, fijación sin tiro y liberación por clic, oclusión o alcance. La revisión en Chromium usa clics y teclas reales, y comprueba la captura opcional y Esc.
 
 ## Acciones, bote y salto · versión 11
 
@@ -83,13 +93,14 @@ El acabado es procedural y todavía estilizado: no equivale a un personaje fotor
 
 Adrián Rivera (07) y Mateo Silva (12): modelos humanos procedurales con proporciones anatómicas, rostro, manos, camiseta sin mangas con nombre y dorsal, pantalón, calcetines y zapatillas con suela y cordones. Animaciones articuladas de carrera y frenado, giro al apuntar, flexión de rodillas y elevación del balón al cargar, extensión y gesto de muñeca al soltar. El balón pasa de una posición de preparación al lado del pecho a la posición de salida sobre la cabeza.
 
-La interfaz original **Baseline** integra el marcador arriba a la izquierda y el nombre y potencia abajo a la izquierda. El nombre y dorsal corresponden siempre al jugador controlado. El encuadre inicial reserva espacio para los paneles y un aviso discreto ayuda a localizar el balón o el aro fuera de vista. Cada canasta suma **2 puntos**, una sola vez, inmediatamente al cruzar el aro. El marcador muestra canastas e intentos y conserva el último resultado al recuperar el balón. Los datos duran la sesión actual; recargar la página inicia una práctica nueva.
+La interfaz original **Baseline** integra el marcador arriba a la izquierda y el nombre y potencia abajo a la izquierda. El nombre y dorsal corresponden siempre al jugador controlado. El encuadre inicial reserva espacio para los paneles y un aviso discreto indica la fijación de aro. Cada canasta suma **2 puntos**, una sola vez, inmediatamente al cruzar el aro. El marcador muestra canastas e intentos y conserva el último resultado al recuperar el balón. Los datos duran la sesión actual; recargar la página inicia una práctica nueva.
 
 La potencia es azul en la zona baja, verde lima en la zona ideal y coral en la zona excesiva. La banda ideal se adapta a distancia y elevación; es orientativa y no corrige el apuntado ni garantiza encestar. Al soltar, valor y referencia de potencia quedan fijados hasta que termina el intento. **Ajustes de apuntado** despliega los controles alternativos de dirección/elevación.
 
 ## Organización y ajustes
 
 - `src/config.js`: gravedad, fuerza mínima/máxima, carga, elevación, posición inicial, límites de cancha, velocidad/aceleración y asignación WASD configurable.
+- `dunk.js`: elegibilidad de salto en pintura, ventana verde, animación asistida y suelta física; `aim.js`: deltas de mouse sin límite y fijación/liberación del aro.
 - `actions.js`: salto/aterrizaje por actor, protección y ritmo de bote; `passing.js`: anclajes y trayectorias directa, de bote y elevada.
 - `movement.js`: respuesta con límite de aceleración y de su variación, aceleración angular, mezcla progresiva caminar/trotar/correr, lateral y retroceso. Cada actor conserva su propio controlador.
 - `footwork.js`: apoyo fijo en el mundo, duración/elevación adaptada al ritmo, curva de pie con llegada suave a una posición de contacto estable, recolocación al detenerse y pasos de giro. Las piernas usan cinemática inversa.
@@ -106,7 +117,7 @@ La potencia es azul en la zona baja, verde lima en la zona ideal y coral en la z
 
 ## Validación
 
-La versión 11 incluye 45 pruebas: además de las verificaciones anteriores, comprueba sprint y bote, contacto con el suelo, protección baja, recuperación al parar, salto único con/sin balón, amague/cancelación sin intento, ventana EE, tres vuelos/recepciones y tres pases fallidos sin transferencia. La revisión en Chromium pulsa teclas reales, comprueba la barra de potencia, los cambios de nombre/control, la independencia del tiro durante un salto y la interfaz móvil.
+La batería actual incluye 51 pruebas. Las de la versión 11 comprueban: además de las verificaciones anteriores, comprueba sprint y bote, contacto con el suelo, protección baja, recuperación al parar, salto único con/sin balón, amague/cancelación sin intento, ventana EE, tres vuelos/recepciones y tres pases fallidos sin transferencia. La revisión en Chromium pulsa teclas reales, comprueba la barra de potencia, los cambios de nombre/control, la independencia del tiro durante un salto y la interfaz móvil.
 
 
 `npm test` ejecuta pruebas de WASD, diagonales, límites y frenado; posición dinámica de salida; tiros corto, largo y lateral; canastas, intentos consecutivos y exclusión de tiros simultáneos; colisiones con suelo/tablero/aro; y cámara cercana en escritorio/móvil: cuerpo visible, distancia, posición detrás y por encima, barrido contra obstáculos y continuidad durante el cambio de control.
@@ -119,6 +130,6 @@ Modelo humano procedural estilizado, sin escaneo fotográfico ni captura de movi
 
 ## Publicación y caché
 
-La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **11**.
+La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **12**.
 
 Después de modificar archivos, ejecuta `npm run version:assets` y luego `npm test` antes de subir a `main`. `npm run dev` actualiza automáticamente las versiones al arrancar. La comprobación de pruebas detecta recursos modificados sin actualizar su identificador. GitHub Pages sigue publicando desde la raíz de `main`, sin compilación externa. Para una primera carga después de una actualización, añade `?release=IDENTIFICADOR` a la URL del juego; esto renueva el documento HTML además de sus módulos.

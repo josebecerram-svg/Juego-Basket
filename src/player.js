@@ -796,6 +796,9 @@ export function createPlayer(scene, profile = athletes.rivera) {
         }
         if (!arm.smoothedHand) arm.smoothedHand = hand.clone();
         const holding =
+          (shot.dunk?.active &&
+            (!shot.dunk.ballReleased ||
+              (shot.dunk.success && shot.dunk.landingTime < 0.14))) ||
           shot.phase === "windup" ||
           (!pose.dribbling &&
             shot.hasBall !== false &&

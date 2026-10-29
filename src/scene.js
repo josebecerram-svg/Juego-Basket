@@ -4,7 +4,7 @@ import { config as c } from "./config.js";
 import { createCamera } from "./camera.js";
 import { createPlayer } from "./player.js";
 import { athletes } from "./athletes.js";
-import { velocity } from "./physics.js";
+
 export function createScene(canvas) {
   const renderer = new T.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -36,16 +36,6 @@ export function createScene(canvas) {
     o.position.set(x, y, z);
     o.castShadow = true;
     o.receiveShadow = true;
-    scene.add(o);
-    return o;
-  }
-  function line(points, color) {
-    const o = new T.Line(
-      new T.BufferGeometry().setFromPoints(
-        points.map((p) => new T.Vector3(...p)),
-      ),
-      new T.LineBasicMaterial({ color }),
-    );
     scene.add(o);
     return o;
   }
@@ -118,18 +108,6 @@ export function createScene(canvas) {
     }
   }
   const rig = createCamera({ obstacles: cameraObstacles });
-  const directionArrow = new T.ArrowHelper(
-    new T.Vector3(0, 0, 1),
-    new T.Vector3(),
-    1.35,
-    0xd5ff5f,
-    0.22,
-    0.12,
-  );
-  scene.add(directionArrow);
-  const guide = line([], "#dbef95");
-  guide.material.transparent = true;
-  guide.material.opacity = 0.6;
   return {
     render(shot, dt = 1 / 60) {
       const w = canvas.clientWidth,
@@ -149,7 +127,9 @@ export function createScene(canvas) {
             athletes[actor.id].height + 0.26 + (actor.y ?? 0),
             actor.z,
           );
-          label.visible = (actor === shot.player) === (role === "TÚ");
+          label.visible =
+            (actor === shot.player) === (role === "TÚ") &&
+            !(actor === shot.player && shot.dunk?.active);
         }
       companionMarker.position.set(shot.companion.x, 0.04, shot.companion.z);
       playerMarker.position.set(shot.player.x, 0.04, shot.player.z);
@@ -163,68 +143,33 @@ export function createScene(canvas) {
           : shot.phase === "passing"
             ? dt * 9
             : 0;
-      directionArrow.position.set(
-        shot.player.x +
-          Math.cos(shot.aimYaw()) * 0.45 +
-          Math.sin(shot.aimYaw()) * 0.4,
-        0.055,
-        shot.player.z -
-          Math.sin(shot.aimYaw()) * 0.45 +
-          Math.cos(shot.aimYaw()) * 0.4,
-      );
-      directionArrow.setDirection(
-        new T.Vector3(Math.sin(shot.aimYaw()), 0, Math.cos(shot.aimYaw())),
-      );
-      directionArrow.visible = ["ready", "charging"].includes(shot.phase);
-      guide.visible = ["ready", "charging"].includes(shot.phase);
-      if (guide.visible) {
-        const v = velocity(
-            shot.phase === "charging" ? shot.power : 0.42,
-            shot.aimYaw(),
-            shot.aim.angle,
-          ),
-          pts = [];
-        for (let t = 0; t < 2; t += 0.04) {
-          const y =
-            c.initial.y +
-            (shot.player.y ?? 0) +
-            v.vy * t -
-            0.5 * c.gravity * t * t;
-          if (y < 0.12) break;
-          pts.push(
-            new T.Vector3(
-              shot.player.x + Math.sin(shot.aimYaw()) * 0.38 + v.vx * t,
-              y,
-              shot.player.z + Math.cos(shot.aimYaw()) * 0.38 + v.vz * t,
-            ),
-          );
-        }
-        guide.geometry.dispose();
-        guide.geometry = new T.BufferGeometry().setFromPoints(pts);
-      }
       renderer.render(scene, rig.camera);
-      const cue = document.querySelector("#target-cue");
-      if (cue) {
-        const hoop = shot.targetHoop ?? c.hoop;
-        let target = { x: hoop.x, y: hoop.y, z: hoop.z },
-          name = "ARO";
-        if (["flight", "passing", "passMiss"].includes(shot.phase)) {
-          target = shot.ball;
-          name = "BALÓN";
-        }
-        const projected = new T.Vector3(target.x, target.y, target.z).project(
-          rig.camera,
-        );
-        const visible =
-          Math.abs(projected.x) < 0.92 &&
-          Math.abs(projected.y) < 0.9 &&
-          projected.z < 1;
-        cue.hidden = visible;
-        cue.querySelector("strong").textContent = name;
-        const sign = projected.z > 1 ? -1 : 1;
-        const angle = Math.atan2(projected.y * sign, projected.x * sign);
-        cue.querySelector("svg").style.transform =
-          `rotate(${(-angle * 180) / Math.PI}deg)`;
+      const origin = rig.camera.position;
+      shot.visibleHoops = c.baskets
+        .map((b) => b.hoop)
+        .filter((h) => {
+          const target = new T.Vector3(h.x, h.y, h.z),
+            projected = target.clone().project(rig.camera);
+          if (
+            projected.z < -1 ||
+            projected.z > 1 ||
+            Math.abs(projected.x) > 0.98 ||
+            Math.abs(projected.y) > 0.98
+          )
+            return false;
+          const delta = target.clone().sub(origin),
+            distance = delta.length(),
+            ray = new T.Ray(origin, delta.normalize());
+          return !cameraObstacles.some((box) => {
+            if (box.min.y >= 2.8 && box.max.z - box.min.z < 0.15) return false; // Transparent backboard.
+            const hit = ray.intersectBox(box, new T.Vector3());
+            return hit && hit.distanceTo(origin) < distance - 0.12;
+          });
+        });
+      const indicator = document.querySelector("#aim-lock");
+      if (indicator) {
+        indicator.hidden = !shot.aimLock;
+        indicator.textContent = "● ARO FIJADO · clic derecho libera";
       }
     },
   };

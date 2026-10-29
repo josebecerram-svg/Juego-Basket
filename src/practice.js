@@ -1,3 +1,5 @@
+import { startDunk, releaseDunk, stepDunk, nearestHoop } from "./dunk.js";
+import { updateAim, toggleHoopLock } from "./aim.js";
 import { Shot } from "./physics.js";
 import { Movement, angleDelta } from "./movement.js";
 import { emptyHands, passFollow, smooth, heldPosition } from "./pose.js";
@@ -40,6 +42,7 @@ export class Practice extends Shot {
   reset() {
     this.possession = "player";
     this.pass = null;
+    this.dunk = null;
     for (const actor of this.actors ?? []) actor.gesture = null;
     super.reset();
   }
@@ -55,7 +58,12 @@ export class Practice extends Shot {
   get passPose() {
     return this.handFor("player");
   }
+  toggleHoopLock() {
+    return toggleHoopLock(this);
+  }
   handFor(person) {
+    if (person === "player" && this.dunk?.active && !this.dunk.ballReleased)
+      return this.dunk.hand;
     const sender = this.pass?.sender,
       receiver = this.pass?.receiver;
     const actor = person === "player" ? this.player : this.companion;
@@ -139,6 +147,8 @@ export class Practice extends Shot {
     return false;
   }
   charge() {
+    if (this.dunk?.active) return false;
+    if (startDunk(this)) return true;
     if (["fake", "fakeReturn"].includes(this.phase)) {
       this.chargeFrom = heldPosition(this);
       this.phase = "charging";
@@ -151,17 +161,36 @@ export class Practice extends Shot {
     return super.charge();
   }
   release() {
+    if (this.phase === "dunkCharge") return releaseDunk(this);
     const ok = super.release();
     if (ok) this.possession = "shooting";
     return ok;
   }
+  cancel() {
+    if (this.phase === "dunkCharge") return releaseDunk(this, true);
+    return super.cancel();
+  }
   requestJump() {
+    if (this.dunk?.active) return this.notify("Termina la clavada y aterriza.");
+    const takeoff = {
+      x: this.player.x,
+      z: this.player.z,
+      hasBall: this.hasBall,
+      hoop: { ...nearestHoop(this.player) },
+      running:
+        (this.inputKeys.has(c.controls.sprint) ||
+          this.inputKeys.has(c.controls.sprintAlt)) &&
+        Math.hypot(this.movement.vx, this.movement.vz) >= c.dunk.minRunSpeed,
+    };
     if (!jump(this.player))
       return this.notify("Espera a aterrizar para volver a saltar.");
+    this.motion.takeoff = takeoff;
+    if (this.phase === "charging") startDunk(this);
     if (this.phase === "fake") this.cancelFake();
     return true;
   }
   requestFake() {
+    if (this.dunk?.active) return this.notify("Termina la clavada y aterriza.");
     if (["fake", "fakeReturn"].includes(this.phase)) return this.cancelFake();
     if (!this.hasBall || !["ready", "charging"].includes(this.phase))
       return this.notify("Amague no disponible sin posesión.");
@@ -198,6 +227,7 @@ export class Practice extends Shot {
     return ok;
   }
   requestPass(type = "direct") {
+    if (this.dunk?.active) return this.notify("Termina la clavada y aterriza.");
     if (!["direct", "bounce", "overhead"].includes(type)) return false;
     let from;
     if (["fake", "fakeReturn"].includes(this.phase)) {
@@ -302,6 +332,8 @@ export class Practice extends Shot {
     m.step(dt, "ready");
   }
   updateMovement(dt) {
+    updateAim(this, dt);
+    if (this.dunk?.active) return;
     const m = this.movement;
     if (
       this.phase === "fake" &&
@@ -342,6 +374,14 @@ export class Practice extends Shot {
   }
   step(dt) {
     this.elapsed += dt;
+    if (this.dunk?.active) {
+      this.noticeTime = Math.max(0, this.noticeTime - dt);
+      if (!this.noticeTime) this.notice = "";
+      stepDunk(this, dt);
+      this.updateCompanion(dt);
+      if (this.phase === "flight" || this.phase === "result") super.step(dt);
+      return;
+    }
     stepMotion(
       this.player,
       this.inputKeys,

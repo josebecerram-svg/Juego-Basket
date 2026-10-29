@@ -1,3 +1,4 @@
+import { mouseAim, wrapYaw } from "./aim.js";
 import { config as c } from "./config.js";
 export function bindControls(button, shot, canvas) {
   const yaw = document.querySelector("#direction"),
@@ -8,32 +9,67 @@ export function bindControls(button, shot, canvas) {
   angle.max = (c.maxAngle * 180) / Math.PI;
   let owner = null;
   function setAim() {
-    if (shot.phase === "windup") return;
+    if (shot.phase === "windup" || shot.dunk?.active) return;
     shot.aim.yaw = (Number(yaw.value) * Math.PI) / 180;
     shot.aim.angle = (Number(angle.value) * Math.PI) / 180;
   }
   yaw.addEventListener("input", setAim);
   angle.addEventListener("input", setAim);
+  let lastPoint = null;
   function point(e) {
-    if (shot.phase === "windup") return;
-    const r = canvas.getBoundingClientRect();
-    // Screen-right is court -X because the third-person view looks toward +Z.
-    shot.aim.yaw =
-      -(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) - 0.5) *
-      Math.PI *
-      2;
-    shot.aim.angle =
-      c.maxAngle -
-      Math.max(0, Math.min(1, (e.clientY - r.top) / r.height)) *
-        (c.maxAngle - c.minAngle);
+    const locked = document.pointerLockElement === canvas;
+    if (lastPoint || locked)
+      mouseAim(
+        shot,
+        locked ? e.movementX : e.clientX - lastPoint.x,
+        locked ? e.movementY : e.clientY - lastPoint.y,
+      );
+    lastPoint = { x: e.clientX, y: e.clientY };
   }
-  canvas.addEventListener("pointermove", point);
+  canvas.addEventListener("mousemove", point);
+  canvas.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") point(e);
+  });
+  canvas.addEventListener("mouseleave", () => {
+    if (document.pointerLockElement !== canvas) lastPoint = null;
+  });
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+  canvas.addEventListener("mousedown", (e) => {
+    if (e.button === 2) {
+      e.preventDefault();
+      canvas.focus({ preventScroll: true });
+      shot.toggleHoopLock();
+    }
+  });
+  const capture = document.querySelector("#mouse-lock");
+  capture?.addEventListener("click", async () => {
+    if (document.pointerLockElement === canvas) {
+      document.exitPointerLock();
+      return;
+    }
+    try {
+      await canvas.requestPointerLock();
+      canvas.focus();
+    } catch {
+      shot.notify(
+        "No se pudo capturar el mouse. Puedes orientar la vista sobre la cancha.",
+      );
+    }
+  });
+  document.addEventListener("pointerlockchange", () => {
+    lastPoint = null;
+    if (capture)
+      capture.textContent =
+        document.pointerLockElement === canvas
+          ? "Esc · liberar mouse"
+          : "Capturar mouse · 360°";
+  });
   for (const surface of [canvas, button]) {
     surface.addEventListener("pointerdown", (e) => {
       if (e.button !== 0 || owner !== null) return;
       if (surface === canvas) {
         canvas.focus({ preventScroll: true });
-        point(e);
+        if (!lastPoint) lastPoint = { x: e.clientX, y: e.clientY };
       }
       if (shot.charge()) {
         owner = { surface, id: e.pointerId };
@@ -42,6 +78,7 @@ export function bindControls(button, shot, canvas) {
       }
     });
     surface.addEventListener("pointerup", (e) => {
+      if (e.button !== 0) return;
       if (owner?.surface === surface && owner.id === e.pointerId) {
         shot.release();
         owner = null;
@@ -58,6 +95,25 @@ export function bindControls(button, shot, canvas) {
       }
     });
   }
+  // Mouse buttons share a pointer ID; a right-button release must never release a left-button charge.
+  window.addEventListener("mouseup", (e) => {
+    if (e.button === 0 && owner) {
+      shot.release();
+      owner = null;
+    }
+  });
+  for (const surface of [canvas, button])
+    surface.addEventListener("mousedown", (e) => {
+      if (e.button !== 0 || owner !== null) return;
+      if (surface === canvas) {
+        canvas.focus({ preventScroll: true });
+        if (!lastPoint) lastPoint = { x: e.clientX, y: e.clientY };
+      }
+      if (shot.charge()) {
+        owner = { surface, id: null };
+        e.preventDefault();
+      }
+    });
   document
     .querySelector("#pass")
     .addEventListener("click", () => shot.tapPass());
@@ -65,6 +121,10 @@ export function bindControls(button, shot, canvas) {
     e.target instanceof HTMLElement &&
     !!e.target.closest("input,button,a,textarea,select,[contenteditable]");
   window.addEventListener("keydown", (e) => {
+    if (e.code === "Escape" && document.pointerLockElement === canvas) {
+      document.exitPointerLock();
+      return;
+    }
     if (
       e.code === c.controls.pass &&
       !e.repeat &&
@@ -95,17 +155,24 @@ export function bindControls(button, shot, canvas) {
     shot.companionMovement.clear();
     shot.cancel();
     owner = null;
+    lastPoint = null;
   }
   window.addEventListener("blur", clear);
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) clear();
   });
   return () => {
-    button.disabled = !["ready", "charging", "fake", "fakeReturn"].includes(
-      shot.phase,
-    );
-    yaw.disabled = angle.disabled = shot.phase === "windup";
-    yaw.value = Math.round((shot.aim.yaw * 180) / Math.PI);
+    button.disabled = ![
+      "ready",
+      "charging",
+      "fake",
+      "fakeReturn",
+      "dunkCharge",
+    ].includes(shot.phase);
+    yaw.disabled =
+      shot.phase === "windup" || !!shot.aimLock || !!shot.dunk?.active;
+    angle.disabled = shot.phase === "windup" || !!shot.dunk?.active;
+    yaw.value = Math.round((wrapYaw(shot.aim.yaw) * 180) / Math.PI);
     angle.value = Math.round((shot.aim.angle * 180) / Math.PI);
     document.querySelector("#direction-value").textContent = yaw.value + "°";
     document.querySelector("#angle-value").textContent = angle.value + "°";

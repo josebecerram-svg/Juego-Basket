@@ -37,6 +37,7 @@ export function readyPosition(shot) {
   };
 }
 export function heldPosition(shot) {
+  if (shot.dunk?.active) return shot.dunk.hand;
   if (shot.phase === "fake" || shot.phase === "fakeReturn") {
     const from = shot.fake.from;
     if (shot.phase === "fakeReturn") {
@@ -128,7 +129,7 @@ export function playerPose(shot) {
   const follow = flying ? 1 - smooth((shot.time - 0.2) / 0.65) : 0;
   const wrist = flying ? smooth(shot.time / 0.12) * follow : 0;
   const sway = Math.sin(stride * 2) * 0.015 * speed;
-  let hand = shot.passPose;
+  let hand = shot.dunk?.active ? shot.dunk.hand : shot.passPose;
   if (
     !hand &&
     shot.hasBall === false &&
@@ -177,8 +178,10 @@ export function playerPose(shot) {
     dribbling:
       shot.hasBall !== false &&
       ((shot.phase === "ready" && (motion?.dribble ?? 0) > 0.001) ||
-        (["charging", "fake", "fakeReturn"].includes(shot.phase) &&
-          heldPosition(shot).y < 0.85)),
+        (["charging", "fake", "fakeReturn", "dunkCharge"].includes(
+          shot.phase,
+        ) &&
+          heldPosition(shot).y < 1.1)),
     hand:
       hand ??
       (shot.phase === "result"
@@ -192,7 +195,9 @@ export function handPosition(shot, pose, side) {
   let center = pose.hand;
   if (pose.dribbling) {
     const blend =
-      shot.phase === "ready" ? smooth((shot.motion?.dribble ?? 0) / 0.3) : 1;
+      shot.phase === "ready"
+        ? smooth((shot.motion?.dribble ?? 0) / 0.3)
+        : smooth((1.1 - center.y) / 0.3);
     const grip = {
       x: (center.x ?? 0) + side * (0.118 + (center.spread ?? 0)),
       y: center.y - 0.025,
@@ -209,6 +214,14 @@ export function handPosition(shot, pose, side) {
       x: mix(grip.x, -0.2 + 0.08 * guard, blend),
       y: mix(grip.y, 1.1 + 0.12 * guard, blend),
       z: mix(grip.z, 0.12 + 0.15 * guard, blend),
+    };
+  }
+  if (shot.dunk?.active && side < 0) {
+    const t = smooth((shot.dunk.age - 0.25) / 0.3);
+    return {
+      x: mix((center.x ?? 0) - 0.118, -0.26, t),
+      y: mix(center.y - 0.025, 1.25, t),
+      z: mix(center.z - 0.015, 0.1, t),
     };
   }
   if (shot.phase === "flight" && side < 0) {

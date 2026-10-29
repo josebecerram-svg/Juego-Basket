@@ -813,3 +813,43 @@ canvas:focus-visible {
   padding: 2px 5px;
   margin-right: 3px;
 }
+
+.aim-lock {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 9px 12px;
+  color: #d5ff5f;
+  background: #10202be0;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  border: 1px solid #546739;
+  pointer-events: none;
+}
+.aim-lock[hidden] {
+  display: none;
+}
+.mouse-lock {
+  margin: 12px 0 0;
+  padding: 8px 12px;
+  color: #d5ff5f;
+  border: 1px solid #45575e;
+  background: #16232a;
+  font-size: 11px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+@media (max-width: 600px) {
+  .aim-lock {
+    top: 135px;
+    white-space: nowrap;
+    font-size: 9px;
+  }
+}
+
+.capture-help {
+  font-size: 10px;
+  color: #aabec5;
+  margin: 6px 0 10px;
+}

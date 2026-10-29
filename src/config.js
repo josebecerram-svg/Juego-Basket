@@ -9,6 +9,17 @@ export const config = {
     fov: 66,
     radius: 0.24,
   },
+  aim: { sensitivity: 0.004, lockRange: 22, visibilityGrace: 0.25 },
+  dunk: {
+    reach: 2.6,
+    minRunSpeed: 3.8,
+    peak: 1.15,
+    chargeSeconds: 0.8,
+    greenLow: 0.48,
+    greenHigh: 0.68,
+    maxHold: 1.05,
+    finishSeconds: 0.22,
+  },
   court: { halfWidth: 7.5, minZ: -22.2, maxZ: 5.8 },
   movement: {
     speed: 3.4,
@@ -63,7 +74,6 @@ export const config = {
   windup: 0.28,
   resetDelay: 1.3,
   maxFlight: 6,
-  maxYaw: Math.PI,
   minAngle: (40 * Math.PI) / 180,
   maxAngle: (70 * Math.PI) / 180,
 };

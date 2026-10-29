@@ -42,7 +42,7 @@ try {
         : shot.phase === "passMiss"
           ? "Pase no recibido. Se conserva el jugador controlado."
           : shot.phase === "ready"
-            ? "Shift correr · Ctrl proteger · Espacio saltar · F amagar · E / EE / Q pasar."
+            ? "Clic derecho fijar aro · Shift + Espacio en pintura + clic izquierdo: clavada."
             : ["fake", "fakeReturn"].includes(shot.phase)
               ? "Amague sin suelta · F cancela · clic prepara el tiro."
               : shot.phase === "charging"

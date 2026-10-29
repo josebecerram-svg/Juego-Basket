@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="es" data-build="47e3e60818fd">
+<html lang="es" data-build="ef05f9256233">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Baseline · Basketball Practice</title>
-    <link rel="stylesheet" href="style.css?v=47e3e60818fd" />
+    <link rel="stylesheet" href="style.css?v=ef05f9256233" />
   </head>
   <body>
     <main>
@@ -15,7 +15,7 @@
           ></a
         >
         <div class="header-mode">
-          <i></i> PRÁCTICA CON COMPAÑERO <span>11</span>
+          <i></i> PRÁCTICA CON COMPAÑERO <span>12</span>
         </div>
       </header>
       <section class="session-heading">
@@ -58,15 +58,7 @@
             >
           </div>
         </div>
-        <div id="target-cue" class="target-cue hud" hidden>
-          <svg viewBox="0 0 20 20" fill="none">
-            <path
-              d="M3 10h13M10 4l6 6-6 6"
-              stroke="currentColor"
-              stroke-width="2"
-            /></svg
-          ><strong>ARO</strong><span>FUERA DE VISTA</span>
-        </div>
+        <div id="aim-lock" class="aim-lock hud" hidden></div>
         <div class="camera-label hud">
           <span>3ª PERSONA</span><i></i> EN VIVO
         </div>
@@ -142,8 +134,12 @@
           ></span>
         </button>
       </section>
+      <button id="mouse-lock" class="mouse-lock">Capturar mouse · 360°</button>
+      <p class="capture-help">
+        Captura opcional: Esc libera el mouse para usar la interfaz.
+      </p>
       <p class="action-help">
-        <span><kbd>Shift</kbd> Correr</span
+        <span><kbd>Der.</kbd> Fijar aro · <kbd>Shift</kbd> Correr</span
         ><span><kbd>Ctrl izq.</kbd> Proteger</span
         ><span><kbd>Espacio</kbd> Saltar</span
         ><span><kbd>F</kbd> Amagar / cancelar</span
@@ -174,7 +170,7 @@
         </p>
       </details>
       <footer>
-        <span>BASELINE / VERSIÓN 11 · CONTROL DEL BALÓN</span
+        <span>BASELINE / VERSIÓN 12 · CLAVADAS Y MIRA LIBRE</span
         ><span>Cursor libre · Recuperación automática del balón</span>
       </footer>
     </main>
@@ -182,27 +178,29 @@
     <script type="importmap">
 {
   "imports": {
-    "./src/actions.js": "./src/actions.js?v=47e3e60818fd",
-    "./src/athletes.js": "./src/athletes.js?v=47e3e60818fd",
-    "./src/camera.js": "./src/camera.js?v=47e3e60818fd",
-    "./src/config.js": "./src/config.js?v=47e3e60818fd",
-    "./src/controls.js": "./src/controls.js?v=47e3e60818fd",
-    "./src/footwork.js": "./src/footwork.js?v=47e3e60818fd",
-    "./src/gym.js": "./src/gym.js?v=47e3e60818fd",
-    "./src/hud.js": "./src/hud.js?v=47e3e60818fd",
-    "./src/main.js": "./src/main.js?v=47e3e60818fd",
-    "./src/movement.js": "./src/movement.js?v=47e3e60818fd",
-    "./src/passing.js": "./src/passing.js?v=47e3e60818fd",
-    "./src/physics.js": "./src/physics.js?v=47e3e60818fd",
-    "./src/player.js": "./src/player.js?v=47e3e60818fd",
-    "./src/pose.js": "./src/pose.js?v=47e3e60818fd",
-    "./src/practice.js": "./src/practice.js?v=47e3e60818fd",
-    "./src/scene.js": "./src/scene.js?v=47e3e60818fd",
-    "./vendor/three.module.js": "./vendor/three.module.js?v=47e3e60818fd"
+    "./src/actions.js": "./src/actions.js?v=ef05f9256233",
+    "./src/aim.js": "./src/aim.js?v=ef05f9256233",
+    "./src/athletes.js": "./src/athletes.js?v=ef05f9256233",
+    "./src/camera.js": "./src/camera.js?v=ef05f9256233",
+    "./src/config.js": "./src/config.js?v=ef05f9256233",
+    "./src/controls.js": "./src/controls.js?v=ef05f9256233",
+    "./src/dunk.js": "./src/dunk.js?v=ef05f9256233",
+    "./src/footwork.js": "./src/footwork.js?v=ef05f9256233",
+    "./src/gym.js": "./src/gym.js?v=ef05f9256233",
+    "./src/hud.js": "./src/hud.js?v=ef05f9256233",
+    "./src/main.js": "./src/main.js?v=ef05f9256233",
+    "./src/movement.js": "./src/movement.js?v=ef05f9256233",
+    "./src/passing.js": "./src/passing.js?v=ef05f9256233",
+    "./src/physics.js": "./src/physics.js?v=ef05f9256233",
+    "./src/player.js": "./src/player.js?v=ef05f9256233",
+    "./src/pose.js": "./src/pose.js?v=ef05f9256233",
+    "./src/practice.js": "./src/practice.js?v=ef05f9256233",
+    "./src/scene.js": "./src/scene.js?v=ef05f9256233",
+    "./vendor/three.module.js": "./vendor/three.module.js?v=ef05f9256233"
   }
 }
     </script>
     <!-- asset-map:end -->
-    <script type="module" src="src/main.js?v=47e3e60818fd"></script>
+    <script type="module" src="src/main.js?v=ef05f9256233"></script>
   </body>
 </html>
