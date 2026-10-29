@@ -593,10 +593,45 @@ export function createPlayer(scene, profile = athletes.rivera) {
       const blend = relax(dt * 12);
       poseHip += (pose.hip + hipOffset - poseHip) * blend;
       pose.hip = poseHip;
-      group.position.set(shot.player.x, 0, shot.player.z);
+      group.position.set(shot.player.x, shot.player.y ?? 0, shot.player.z);
       group.rotation.y =
         shot.bodyYaw ??
         (shot.phase === "windup" ? shot.launch.yaw : shot.aim.yaw);
+      const airborne = (shot.player.y ?? 0) > 0;
+      if (!airborne && group.userData.airborne)
+        for (const foot of footwork.feet) foot.position = null;
+      group.userData.airborne = airborne;
+      const feet = airborne
+        ? [-1, 1].map((side) => ({
+            position: {
+              x: shot.player.x + Math.cos(group.rotation.y) * side * 0.12,
+              z: shot.player.z - Math.sin(group.rotation.y) * side * 0.12,
+              y: 0.04,
+            },
+            yaw: group.rotation.y,
+            pitch: -0.1,
+          }))
+        : footwork.update(dt, shot.player, group.rotation.y, shot.movement);
+      // Lower the pelvis when a planted foot trails a sprint stop or court boundary.
+      // This preserves contact without stretching a leg beyond its anatomical length.
+      if (!airborne)
+        for (const foot of feet) {
+          const dx =
+            foot.position.x -
+            shot.player.x -
+            Math.cos(group.rotation.y) * foot.side * 0.105 * bulk;
+          const dz =
+            foot.position.z -
+            shot.player.z +
+            Math.sin(group.rotation.y) * foot.side * 0.105 * bulk;
+          const reach = 0.905 + hipOffset;
+          const maxHip =
+            0.12 +
+            foot.position.y +
+            Math.sqrt(Math.max(0.2, reach * reach - dx * dx - dz * dz));
+          pose.hip = Math.min(pose.hip, maxHip);
+        }
+      poseHip = pose.hip;
       const gazeTarget =
         shot.gazeTarget ??
         (shot.phase === "passWindup" && shot.companion
@@ -615,7 +650,7 @@ export function createPlayer(scene, profile = athletes.rivera) {
               Math.min(
                 0.3,
                 -Math.atan2(
-                  gazeTarget.y - (profile.height - 0.14),
+                  gazeTarget.y - (profile.height - 0.14 + (shot.player.y ?? 0)),
                   gazeDistance,
                 ),
               ),
@@ -674,12 +709,6 @@ export function createPlayer(scene, profile = athletes.rivera) {
       head.rotation.y += (headYaw - head.rotation.y) * blend;
       hips.position.y = pose.hip - 0.96;
       hips.rotation.y += (-body.rotation.y * 0.45 - hips.rotation.y) * blend;
-      const feet = footwork.update(
-        dt,
-        shot.player,
-        group.rotation.y,
-        shot.movement,
-      );
       for (const [index, leg] of legs.entries()) {
         const foot = feet[index],
           { side } = leg,
@@ -747,7 +776,8 @@ export function createPlayer(scene, profile = athletes.rivera) {
         if (!arm.smoothedHand) arm.smoothedHand = hand.clone();
         const holding =
           shot.phase === "windup" ||
-          (shot.hasBall !== false &&
+          (!pose.dribbling &&
+            shot.hasBall !== false &&
             !["flight", "result"].includes(shot.phase));
         arm.smoothedHand.lerp(hand, holding ? 1 : relax(dt * 14));
         hand.copy(arm.smoothedHand);

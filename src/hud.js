@@ -6,7 +6,7 @@ export function powerFeedback(shot) {
     ? shot.launch.origin
     : {
         x: shot.player.x + Math.sin(shot.aimYaw()) * 0.38,
-        y: c.initial.y,
+        y: c.initial.y + (shot.player.y ?? 0),
         z: shot.player.z + Math.cos(shot.aimYaw()) * 0.38,
       };
   const hoop = (frozen ? shot.launch.hoop : shot.targetHoop) ?? c.hoop,
@@ -83,11 +83,25 @@ export function createHud() {
     $(".feedback").textContent =
       (shot.scored ? "¡Canasta!" : shot.result) ??
       {
-        ready: "Encuentra tu tiro",
+        ready:
+          shot.motion?.jumpStage === "air"
+            ? "Salto"
+            : (shot.motion?.guard ?? 0) > 0.5
+              ? "Protegiendo el balón"
+              : (shot.motion?.dribble ?? 0) > 0.2
+                ? "Botando"
+                : "Encuentra tu tiro",
+        fake: "Amague · conserva el balón",
+        fakeReturn: "Recuperando postura",
         charging: "Cargando tiro",
         windup: "Lanzando",
         flight: "Balón en juego",
-        passWindup: "Preparando pase",
+        passWindup:
+          shot.pass?.type === "bounce"
+            ? "Preparando pase con bote"
+            : shot.pass?.type === "overhead"
+              ? "Preparando pase elevado"
+              : "Preparando pase directo",
         passing: "Pase en vuelo",
         receive: "Recibiendo el balón",
         passMiss: "Pase no recibido",
@@ -102,7 +116,7 @@ export function createHud() {
     $("#pass-status").textContent =
       shot.notice ||
       (shot.phase === "ready"
-        ? "E — Pasar"
+        ? "E directo · EE bote · Q elevado"
         : shot.phase === "receive"
           ? "Recepción · cambio de control"
           : "Pase no disponible");

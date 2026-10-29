@@ -146,7 +146,7 @@ export function createScene(canvas) {
           const label = labels[actor.id][role];
           label.position.set(
             actor.x,
-            athletes[actor.id].height + 0.26,
+            athletes[actor.id].height + 0.26 + (actor.y ?? 0),
             actor.z,
           );
           label.visible = (actor === shot.player) === (role === "TÚ");
@@ -185,7 +185,11 @@ export function createScene(canvas) {
           ),
           pts = [];
         for (let t = 0; t < 2; t += 0.04) {
-          const y = c.initial.y + v.vy * t - 0.5 * c.gravity * t * t;
+          const y =
+            c.initial.y +
+            (shot.player.y ?? 0) +
+            v.vy * t -
+            0.5 * c.gravity * t * t;
           if (y < 0.12) break;
           pts.push(
             new T.Vector3(

@@ -26,7 +26,7 @@ export class Shot {
         this.player.x +
         Math.sin(this.aimYaw()) * held.z +
         Math.cos(this.aimYaw()) * (held.x ?? 0),
-      y: held.y,
+      y: held.y + (this.player.y ?? 0),
       z:
         this.player.z +
         Math.cos(this.aimYaw()) * held.z -
@@ -48,6 +48,7 @@ export class Shot {
   }
   charge() {
     if (this.phase !== "ready") return false;
+    this.chargeFrom = heldPosition(this);
     this.phase = "charging";
     this.time = 0;
     return true;
@@ -64,7 +65,7 @@ export class Shot {
       hoop: { ...(this.targetHoop ?? c.hoop) },
       origin: {
         x: this.player.x + Math.sin(this.aimYaw()) * 0.38,
-        y: c.initial.y,
+        y: c.initial.y + (this.player.y ?? 0),
         z: this.player.z + Math.cos(this.aimYaw()) * 0.38,
       },
     };
@@ -89,7 +90,7 @@ export class Shot {
         this.time = 0;
         this.launch.origin = {
           x: this.player.x + Math.sin(this.launch.yaw) * 0.38,
-          y: c.initial.y,
+          y: c.initial.y + (this.player.y ?? 0),
           z: this.player.z + Math.cos(this.launch.yaw) * 0.38,
         };
         this.ball = {

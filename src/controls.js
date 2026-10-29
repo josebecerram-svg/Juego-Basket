@@ -60,21 +60,29 @@ export function bindControls(button, shot, canvas) {
   }
   document
     .querySelector("#pass")
-    .addEventListener("click", () => shot.requestPass());
+    .addEventListener("click", () => shot.tapPass());
   const isInput = (e) =>
     e.target instanceof HTMLElement &&
     !!e.target.closest("input,button,a,textarea,select,[contenteditable]");
   window.addEventListener("keydown", (e) => {
     if (
-      e.code === "KeyE" &&
+      e.code === c.controls.pass &&
       !e.repeat &&
       (!isInput(e) || e.target.id === "pass")
     ) {
       e.preventDefault();
-      shot.requestPass();
+      shot.tapPass();
       return;
     }
     if (isInput(e)) return;
+    if ([c.controls.jump, c.controls.fake, c.controls.lob].includes(e.code)) {
+      e.preventDefault();
+      if (e.repeat) return;
+      if (e.code === c.controls.jump) shot.requestJump();
+      if (e.code === c.controls.fake) shot.requestFake();
+      if (e.code === c.controls.lob) shot.requestPass("overhead");
+      return;
+    }
     if (Object.values(c.controls).includes(e.code)) {
       shot.inputKeys.add(e.code);
       e.preventDefault();
@@ -93,7 +101,9 @@ export function bindControls(button, shot, canvas) {
     if (document.hidden) clear();
   });
   return () => {
-    button.disabled = !["ready", "charging"].includes(shot.phase);
+    button.disabled = !["ready", "charging", "fake", "fakeReturn"].includes(
+      shot.phase,
+    );
     yaw.disabled = angle.disabled = shot.phase === "windup";
     yaw.value = Math.round((shot.aim.yaw * 180) / Math.PI);
     angle.value = Math.round((shot.aim.angle * 180) / Math.PI);

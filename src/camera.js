@@ -85,10 +85,14 @@ export function createCamera({ obstacles = [] } = {}) {
       if (shot.companion)
         boxes.push(
           new T.Box3(
-            new T.Vector3(shot.companion.x - 0.34, 0, shot.companion.z - 0.34),
+            new T.Vector3(
+              shot.companion.x - 0.34,
+              shot.companion.y ?? 0,
+              shot.companion.z - 0.34,
+            ),
             new T.Vector3(
               shot.companion.x + 0.34,
-              2.05,
+              2.05 + (shot.companion.y ?? 0),
               shot.companion.z + 0.34,
             ),
           ).expandByScalar(c.camera.radius),
@@ -150,7 +154,10 @@ export function createCamera({ obstacles = [] } = {}) {
       const lookAhead =
         c.camera.lookAhead * Math.max(0.2, Math.cos(avoidAngle) ** 2);
       const targetHeight =
-        c.camera.lookHeight + (shot.aim.angle - c.angle) * 0.5 + flight * 0.22;
+        c.camera.lookHeight +
+        (p.y ?? 0) * 0.65 +
+        (shot.aim.angle - c.angle) * 0.5 +
+        flight * 0.22;
       lookHeight += (targetHeight - lookHeight) * (1 - Math.exp(-dt * 10));
       camera.lookAt(
         anchor.x + Math.sin(viewYaw) * lookAhead,

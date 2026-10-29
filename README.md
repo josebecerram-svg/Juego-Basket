@@ -1,4 +1,4 @@
-# Baseline · prototipo 07 · Cámara cercana y presentación de cancha
+# Baseline · prototipo 11 · Acciones y control del balón
 
 Práctica de tiros y pases en tercera persona con Three.js, con Rivera (07) y Silva (12). Controlas a quien recibe el pase; el otro jugador actúa como compañero de apoyo de la computadora. Cancha interior de 15 × 28 m, parquet claro generado por código, zonas azules, líneas, dos tableros y aros a 3,05 m y graderías oscuras. La escena se construye con geometría 3D; no contiene una fotografía como fondo.
 
@@ -10,7 +10,7 @@ Para desarrollo local: Node.js >=18, `npm run dev` en la carpeta del proyecto, y
 
 ## Controles
 
-- **W:** avanzar hacia donde mira el personaje. **S:** retroceder. **A/D:** desplazarse a izquierda/derecha respecto a esa orientación. El movimiento limita aceleración, frenado y variación de aceleración, con giros progresivos y diagonales normalizadas. Mantener WASD mezcla caminar, trotar y correr sin añadir teclas; los desplazamientos laterales y hacia atrás conservan un ritmo más corto y controlado. Se mantienen los límites de la cancha. El cuerpo acompaña la velocidad lateral y de retroceso; los pies mantienen puntos de apoyo en el mundo y alternan las zancadas.
+- **W:** avanzar hacia donde mira el personaje. **S:** retroceder. **A/D:** desplazarse a izquierda/derecha respecto a esa orientación. El movimiento limita aceleración, frenado y variación de aceleración, con giros progresivos y diagonales normalizadas. Mantener WASD mezcla caminar y trotar; **Shift** permite correr más rápido con aceleración gradual; los desplazamientos laterales y hacia atrás conservan un ritmo más corto y controlado. Se mantienen los límites de la cancha. El cuerpo acompaña la velocidad lateral y de retroceso; los pies mantienen puntos de apoyo en el mundo y alternan las zancadas.
 - **Mueve el mouse sobre la cancha:** ajusta directamente la dirección y la elevación. El cuerpo gira y la cámara acompaña suavemente desde atrás, por encima y ligeramente a un lado. La cámara cercana acompaña desde atrás y prioriza el cuerpo completo del jugador controlado; el aro y el balón se ven cuando quedan dentro del campo visual. Si salen de vista, un indicador orienta hacia ellos.
 - **Mantén clic izquierdo sobre la cancha:** carga potencia. **Suéltalo:** animación y lanzamiento. La carga llega al máximo en 1,6 segundos y se mantiene allí. No se necesita capturar ni bloquear el mouse; puedes salir de la cancha y usar la interfaz normalmente.
 - También puedes ajustar **Dirección/Ángulo** con los deslizadores y mantener/soltar **Lanzar**, utilizable con mouse o pantalla táctil. La potencia se carga solo al mantener el botón izquierdo sobre la cancha o **Lanzar** (también mediante una pulsación táctil sostenida), nunca con E.
@@ -19,9 +19,22 @@ Para desarrollo local: Node.js >=18, `npm run dev` en la carpeta del proyecto, y
 
 Desde la posición inicial, **dirección 0°, ángulo 55° y potencia cercana al 42 %** permiten practicar una canasta. Al moverte, tendrás que ajustar dirección y potencia. La guía es orientativa: muestra una parábola ideal sin rebotes y, antes de cargar, representa una potencia de referencia del 42 %.
 
+## Acciones, bote y salto · versión 11
+
+- **Shift (izquierdo o derecho), mantenido:** acelera hasta 5,6 m/s frente a 3,4 m/s normales. Los pasos se acortan en tiempo y la pelvis baja progresivamente para mantener el alcance de las piernas. Al soltar, se reduce la velocidad gradualmente.
+- **Ctrl izquierdo, mantenido:** guarda el balón al costado, cruza el torso y recoge los brazos. En movimiento reduce el ritmo de desplazamiento y el bote queda bajo, cercano al cuerpo. Al soltar recupera la postura gradualmente. Solo funciona con posesión. La práctica no tiene defensores ni robos: se verifica la postura, pero todavía no hay pérdidas ante un rival que permitan medir una ventaja defensiva.
+- **Espacio:** flexión de preparación de 120 ms, impulso vertical de 4,5 m/s, vuelo bajo gravedad y absorción del aterrizaje. No admite otro impulso en el aire ni encadena saltos por repetición del teclado. Funciona con y sin balón. El estado de salto pertenece al actor físico y continúa aunque pase a ser IA después de una recepción.
+- **F:** amaga sin soltar ni contar un tiro. **F de nuevo**, desplazarse o proteger cancela con recuperación suave; clic izquierdo pasa a la carga desde la altura actual del balón; E/Q preparan un pase desde esa misma posición. Puede convertir una carga en amague sin que soltar luego el mouse produzca un tiro accidental.
+
+Con posesión y movimiento el balón bota a una cadencia que depende de la velocidad, se separa de la mano y toca el suelo. La mano no persigue al balón hasta el suelo ni estira el brazo. Al parar, saltar o preparar otra acción se recoge progresivamente; durante protección el bote es más bajo. El bote de posesión es una trayectoria coordinada con el movimiento; al soltar un pase o tiro deja de seguir al portador y usa su propia trayectoria. No cuenta como intento ni cambia la posesión.
+
+Las acciones usan `config.controls` y `config.actions`; velocidad de carrera en `config.movement.sprintSpeed`. Los modificadores retenidos se transfieren solo al nuevo controlador; el compañero IA no comparte su conjunto de teclas. Al perder foco se liberan las teclas para evitar acciones retenidas.
+
 ## Compañero, recepción y cambio de control
 
-- **E — Pasar:** envía el balón al otro jugador. También existe el botón **E Pasar**.
+- **E, un toque — Directo:** prepara y pasa al otro jugador. También existe el botón **E Pasar**.
+- **EE, dos toques en 260 ms — Con bote:** el segundo toque convierte la preparación en un pase que rebota una sola vez antes de recibir. El primer toque no suelta inmediatamente el balón, por lo que no se crea un segundo pase simultáneo. Mantener E no cuenta como doble toque.
+- **Q — Elevado:** preparación sobre la cabeza, arco alto y manos elevadas del receptor. Los tres pases conservan el control hasta confirmar el contacto con el receptor.
 - Mientras el pase vuela sigues controlando al pasador. Al comprobar que el balón está dentro del alcance de las manos del receptor, el control pasa a este, sin mover ni intercambiar físicamente a los personajes.
 - El receptor continúa el gesto de recepción y queda listo para moverse, apuntar y tirar con los mismos controles. La cámara transiciona hacia él, y la interfaz actualiza nombre y dorsal. Las etiquetas **TÚ / IA** distinguen al controlado y al compañero.
 - WASD tiene una sola conexión activa: las teclas que mantengas presionadas se transfieren al receptor, y el jugador anterior conserva su movimiento residual bajo control exclusivo de la computadora. No se envía entrada de usuario a ambos.
@@ -77,6 +90,7 @@ La potencia es azul en la zona baja, verde lima en la zona ideal y coral en la z
 ## Organización y ajustes
 
 - `src/config.js`: gravedad, fuerza mínima/máxima, carga, elevación, posición inicial, límites de cancha, velocidad/aceleración y asignación WASD configurable.
+- `actions.js`: salto/aterrizaje por actor, protección y ritmo de bote; `passing.js`: anclajes y trayectorias directa, de bote y elevada.
 - `movement.js`: respuesta con límite de aceleración y de su variación, aceleración angular, mezcla progresiva caminar/trotar/correr, lateral y retroceso. Cada actor conserva su propio controlador.
 - `footwork.js`: apoyo fijo en el mundo, duración/elevación adaptada al ritmo, curva de pie con llegada suave a una posición de contacto estable, recolocación al detenerse y pasos de giro. Las piernas usan cinemática inversa.
 - `practice.js`: actores con identidad estable, transferencia exclusiva de entrada al recibir, compañero de apoyo, vuelo asistido limitado, comprobación de recepción y recuperación de pases fallidos.
@@ -92,6 +106,9 @@ La potencia es azul en la zona baja, verde lima en la zona ideal y coral en la z
 
 ## Validación
 
+La versión 11 incluye 45 pruebas: además de las verificaciones anteriores, comprueba sprint y bote, contacto con el suelo, protección baja, recuperación al parar, salto único con/sin balón, amague/cancelación sin intento, ventana EE, tres vuelos/recepciones y tres pases fallidos sin transferencia. La revisión en Chromium pulsa teclas reales, comprueba la barra de potencia, los cambios de nombre/control, la independencia del tiro durante un salto y la interfaz móvil.
+
+
 `npm test` ejecuta pruebas de WASD, diagonales, límites y frenado; posición dinámica de salida; tiros corto, largo y lateral; canastas, intentos consecutivos y exclusión de tiros simultáneos; colisiones con suelo/tablero/aro; y cámara cercana en escritorio/móvil: cuerpo visible, distancia, posición detrás y por encima, barrido contra obstáculos y continuidad durante el cambio de control.
 
 Las pruebas cubren continuidad de aceleración y giro, mezcla de ritmos, apoyo sin deslizamiento y llegada suave del pie. Se verifica que no cambie el control antes de recibir, que el receptor herede únicamente la entrada activa, que el pasador sea IA y que un fallo no transfiera control. En Chromium se prueban WASD, E, ambos cambios de jugador, nombres de la interfaz, tiro y canasta con Silva, conservación del marcador y recuperación de un pase fallido. También se revisan caminata, trote, carrera, lateral, retroceso, frenada y giro.
@@ -102,6 +119,6 @@ Modelo humano procedural estilizado, sin escaneo fotográfico ni captura de movi
 
 ## Publicación y caché
 
-La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **10**.
+La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **11**.
 
 Después de modificar archivos, ejecuta `npm run version:assets` y luego `npm test` antes de subir a `main`. `npm run dev` actualiza automáticamente las versiones al arrancar. La comprobación de pruebas detecta recursos modificados sin actualizar su identificador. GitHub Pages sigue publicando desde la raíz de `main`, sin compilación externa. Para una primera carga después de una actualización, añade `?release=IDENTIFICADOR` a la URL del juego; esto renueva el documento HTML además de sus módulos.

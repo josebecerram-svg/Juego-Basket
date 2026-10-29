@@ -68,7 +68,7 @@ export class Footwork {
             time: 0,
             duration: settle
               ? 0.2
-              : 0.215 +
+              : Math.max(0.125, 0.215 - Math.max(0, speed - 3.4) * 0.06) +
                 0.035 * (1 - Math.min(1, speed / 3.4)) +
                 0.015 * (movement?.gait?.strafe ?? 0),
             settle,
@@ -93,7 +93,9 @@ export class Footwork {
         s = smoother(t),
         h = home(foot),
         remaining = Math.max(0, swing.duration - swing.time),
-        lead = swing.settle ? 0 : 0.11;
+        lead = swing.settle
+          ? 0
+          : Math.max(0.05, 0.11 - Math.max(0, speed - 3.4) * 0.03);
       const ax = movement?.ax ?? 0,
         az = movement?.az ?? 0;
       const prediction = {

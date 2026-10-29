@@ -1,6 +1,8 @@
 import { Shot } from "./physics.js";
 import { Movement, angleDelta } from "./movement.js";
-import { emptyHands, passFollow, smooth } from "./pose.js";
+import { emptyHands, passFollow, smooth, heldPosition } from "./pose.js";
+import { createMotion, stepMotion, jump } from "./actions.js";
+import { catchHand, releaseHand, passFlight, samplePass } from "./passing.js";
 import { config as c } from "./config.js";
 const mix = (a, b, t) => a + (b - a) * t;
 export class Practice extends Shot {
@@ -14,6 +16,11 @@ export class Practice extends Shot {
     });
     this.companion = { ...c.companion, id: "silva", fullName: "Mateo Silva" };
     this.actors = [this.player, this.companion];
+    for (const actor of this.actors) {
+      actor.y = 0;
+      actor.motion = createMotion();
+    }
+    this.elapsed = 0;
     this.inputKeys = new Set();
     this.movement = new Movement(this.player);
     this.movement.keys = this.inputKeys;
@@ -39,6 +46,9 @@ export class Practice extends Shot {
   get hasBall() {
     return this.possession === "player";
   }
+  get motion() {
+    return this.player.motion;
+  }
   get action() {
     return this.player.gesture;
   }
@@ -51,12 +61,12 @@ export class Practice extends Shot {
     const actor = person === "player" ? this.player : this.companion;
     const empty = emptyHands();
     if (actor?.gesture?.kind === "passFollow")
-      return passFollow(actor.gesture.time);
+      return passFollow(actor.gesture.time, actor.gesture.type);
     if (this.phase === "passWindup" && receiver === person) {
       const t = smooth(this.time / c.passing.preparation);
       return {
         x: 0,
-        y: mix(1.15, 1.45, t),
+        y: mix(1.15, catchHand(this.pass.type).y, t),
         z: mix(0.12, 0.3, t),
         spread: 0.16 * (1 - t),
       };
@@ -65,25 +75,39 @@ export class Practice extends Shot {
       const t = smooth(
         (this.pass.motionTime ?? this.time) / c.passing.preparation,
       );
+      const from = this.pass.from ?? { x: 0.24, y: 1.5, z: 0.42 },
+        collect = smooth(this.time / 0.18),
+        out = releaseHand(this.pass.type);
+      const ready = {
+        x: mix(from.x ?? 0, 0.24, collect),
+        y: mix(from.y, 1.5, collect),
+        z: mix(from.z, 0.42, collect),
+      };
       return {
-        x: 0.24 * (1 - t),
-        y: 1.5 - 0.05 * t,
-        z:
-          0.42 -
-          0.12 * Math.sin(t * Math.PI) +
-          0.14 * smooth((t - 0.45) / 0.55),
+        x: ready.x * (1 - t),
+        y: mix(ready.y, out.y, t),
+        z: mix(ready.z - 0.12 * Math.sin(t * Math.PI), out.z, smooth(t)),
       };
     }
     if (this.phase === "passing") {
       if (receiver === person) {
         const t = smooth(this.time / this.pass.duration);
-        return { x: 0, y: 1.45, z: 0.3 + 0.12 * t, spread: 0 };
+        return {
+          x: 0,
+          y: catchHand(this.pass.type).y,
+          z: 0.3 + 0.12 * t,
+          spread: 0,
+        };
       }
     }
     if (this.phase === "receive" && person === "player") {
       const v = Math.min(1, this.time / c.passing.catchTime),
         t = v * v * (3 - 2 * v);
-      return { x: 0.24 * t, y: 1.45 + 0.05 * t, z: 0.42 };
+      return {
+        x: 0.24 * t,
+        y: mix(catchHand(this.pass.type).y, 1.5, t),
+        z: 0.42,
+      };
     }
     if (person === "companion") return empty;
     if (
@@ -99,7 +123,7 @@ export class Practice extends Shot {
         person === "player" ? this.aimYaw() : this.companionMovement.bodyYaw;
     return {
       x: p.x + Math.sin(yaw) * hand.z + Math.cos(yaw) * (hand.x ?? 0),
-      y: hand.y,
+      y: hand.y + (p.y ?? 0),
       z: p.z + Math.cos(yaw) * hand.z - Math.sin(yaw) * (hand.x ?? 0),
     };
   }
@@ -115,6 +139,13 @@ export class Practice extends Shot {
     return false;
   }
   charge() {
+    if (["fake", "fakeReturn"].includes(this.phase)) {
+      this.chargeFrom = heldPosition(this);
+      this.phase = "charging";
+      this.time = 0;
+      this.power = 0;
+      return true;
+    }
     if (this.possession !== "player")
       return this.notify("Tiro no disponible: espera la recepción.");
     return super.charge();
@@ -124,7 +155,56 @@ export class Practice extends Shot {
     if (ok) this.possession = "shooting";
     return ok;
   }
-  requestPass() {
+  requestJump() {
+    if (!jump(this.player))
+      return this.notify("Espera a aterrizar para volver a saltar.");
+    if (this.phase === "fake") this.cancelFake();
+    return true;
+  }
+  requestFake() {
+    if (["fake", "fakeReturn"].includes(this.phase)) return this.cancelFake();
+    if (!this.hasBall || !["ready", "charging"].includes(this.phase))
+      return this.notify("Amague no disponible sin posesión.");
+    this.fake = { from: heldPosition(this) };
+    this.phase = "fake";
+    this.time = 0;
+    this.power = 0;
+    return true;
+  }
+  cancelFake() {
+    if (!["fake", "fakeReturn"].includes(this.phase)) return false;
+    this.fake = { from: heldPosition(this) };
+    this.phase = "fakeReturn";
+    this.time = 0;
+    return true;
+  }
+  tapPass() {
+    if (
+      this.lastPassTap?.id === this.player.id &&
+      this.elapsed - this.lastPassTap.time <= c.actions.doubleTap &&
+      this.phase === "passWindup" &&
+      this.pass.type === "direct"
+    ) {
+      this.pass.type = "bounce";
+      this.player.gesture.type = "bounce";
+      this.companion.gesture.type = "bounce";
+      this.lastPassTap = null;
+      this.notice = "Pase con bote";
+      this.noticeTime = 1;
+      return true;
+    }
+    const ok = this.requestPass("direct");
+    if (ok) this.lastPassTap = { id: this.player.id, time: this.elapsed };
+    return ok;
+  }
+  requestPass(type = "direct") {
+    if (!["direct", "bounce", "overhead"].includes(type)) return false;
+    let from;
+    if (["fake", "fakeReturn"].includes(this.phase)) {
+      from = heldPosition(this);
+      this.phase = "ready";
+    }
+
     const available = this.phase === "ready" && this.possession === "player";
     if (!available)
       return this.notify(
@@ -141,9 +221,15 @@ export class Practice extends Shot {
       return this.notify("Acércate al compañero para pasar (máx. 12 m).");
     const sender = "player",
       receiver = "companion";
-    this.pass = { sender, receiver, motionTime: 0 };
-    this.player.gesture = { kind: "passPrepare", time: 0 };
-    this.companion.gesture = { kind: "catchReady", time: 0 };
+    this.pass = {
+      sender,
+      receiver,
+      motionTime: 0,
+      type,
+      from: from ?? heldPosition(this),
+    };
+    this.player.gesture = { kind: "passPrepare", time: 0, type };
+    this.companion.gesture = { kind: "catchReady", time: 0, type };
     this.phase = "passWindup";
     this.time = 0;
     this.power = 0;
@@ -170,7 +256,7 @@ export class Practice extends Shot {
     this.movement.yaw = this.bodyYaw;
     this.supporting = false;
     this.controlChanges++;
-    this.player.gesture = { kind: "catch", time: 0 };
+    this.player.gesture = { kind: "catch", time: 0, type: this.pass.type };
     this.possession = "player";
     this.phase = "receive";
     this.time = 0;
@@ -217,6 +303,17 @@ export class Practice extends Shot {
   }
   updateMovement(dt) {
     const m = this.movement;
+    if (
+      this.phase === "fake" &&
+      (this.inputKeys.has(c.controls.protect) ||
+        [
+          c.controls.forward,
+          c.controls.left,
+          c.controls.backward,
+          c.controls.right,
+        ].some((k) => this.inputKeys.has(k)))
+    )
+      this.cancelFake();
     m.yaw = this.phase === "windup" ? this.launch.yaw : this.aim.yaw;
     m.facingTarget =
       this.pass && ["passWindup", "passing", "receive"].includes(this.phase)
@@ -240,9 +337,36 @@ export class Practice extends Shot {
       hasBall: this.possession === "companion",
       passPose: this.handFor("companion"),
       action: this.companion.gesture,
+      motion: this.companion.motion,
     };
   }
   step(dt) {
+    this.elapsed += dt;
+    stepMotion(
+      this.player,
+      this.inputKeys,
+      this.phase,
+      this.hasBall,
+      this.movement,
+      dt,
+    );
+    stepMotion(
+      this.companion,
+      new Set(),
+      "ready",
+      false,
+      this.companionMovement,
+      dt,
+    );
+    if (["fake", "fakeReturn"].includes(this.phase)) {
+      this.time += dt;
+      this.hold();
+      if (this.time >= (this.phase === "fake" ? c.actions.fakeDuration : 0.2)) {
+        this.phase = "ready";
+        this.time = 0;
+      }
+      return;
+    }
     for (const actor of this.actors)
       if (actor.gesture) {
         actor.gesture.time += dt;
@@ -273,20 +397,19 @@ export class Practice extends Shot {
       const hand = this.handFor(this.pass.sender);
       Object.assign(this.ball, this.pointFor(this.pass.sender, hand));
       if (this.pass.motionTime >= c.passing.preparation && delta < 0.12) {
-        const target = this.pointFor(this.pass.receiver, {
-            x: 0,
-            y: 1.45,
-            z: 0.42,
-          }),
-          start = { ...this.ball },
-          d = Math.hypot(target.x - start.x, target.z - start.z);
-        Object.assign(this.pass, {
-          start,
-          duration: Math.max(0.45, Math.min(1.2, d / c.passing.speed)),
-          arc: 0.18 + d * 0.035,
-          target,
-        });
-        this.player.gesture = { kind: "passFollow", time: 0 };
+        const target = this.pointFor(
+          this.pass.receiver,
+          catchHand(this.pass.type),
+        );
+        Object.assign(
+          this.pass,
+          passFlight({ ...this.ball }, target, this.pass.type),
+        );
+        this.player.gesture = {
+          kind: "passFollow",
+          time: 0,
+          type: this.pass.type,
+        };
         this.phase = "passing";
         this.possession = "air";
         this.time = 0;
@@ -296,7 +419,7 @@ export class Practice extends Shot {
     if (this.phase === "passing") {
       this.time += dt;
       const t = Math.min(1, this.time / this.pass.duration),
-        receiver = this.pointFor("companion", { x: 0, y: 1.45, z: 0.42 });
+        receiver = this.pointFor("companion", catchHand(this.pass.type));
       const correction = {
         x: receiver.x - this.pass.target.x,
         z: receiver.z - this.pass.target.z,
@@ -309,9 +432,12 @@ export class Practice extends Shot {
         z: this.pass.target.z + correction.z * assist,
       };
       const previous = { ...this.ball };
-      for (const a of ["x", "y", "z"])
-        this.ball[a] = mix(this.pass.start[a], end[a], t);
-      this.ball.y += 4 * this.pass.arc * t * (1 - t);
+      Object.assign(this.ball, samplePass(this.pass, end, t));
+      if (this.pass.type === "bounce" && this.pass.bounces === 0 && t >= 0.46) {
+        this.pass.bounces = 1;
+        this.ball.y = c.ballRadius;
+        this.contacts.add("passFloor");
+      }
       if (t === 1) {
         const caught =
           Math.hypot(

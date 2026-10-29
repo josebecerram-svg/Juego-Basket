@@ -42,10 +42,12 @@ try {
         : shot.phase === "passMiss"
           ? "Pase no recibido. Se conserva el jugador controlado."
           : shot.phase === "ready"
-            ? "WASD para moverte · Mouse para apuntar · E para pasar."
-            : shot.phase === "charging"
-              ? "Suelta el clic izquierdo o Lanzar para tirar."
-              : "Espera a que termine el intento.");
+            ? "Shift correr · Ctrl proteger · Espacio saltar · F amagar · E / EE / Q pasar."
+            : ["fake", "fakeReturn"].includes(shot.phase)
+              ? "Amague sin suelta · F cancela · clic prepara el tiro."
+              : shot.phase === "charging"
+                ? "Suelta el clic izquierdo o Lanzar para tirar."
+                : "Espera a que termine el intento.");
     scene.render(shot, dt);
     requestAnimationFrame(frame);
   }

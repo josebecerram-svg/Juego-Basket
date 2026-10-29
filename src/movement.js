@@ -68,9 +68,14 @@ export class Movement {
     const lx = x / (input || 1),
       lz = z / (input || 1);
     const directional = lz < -0.2 ? 0.8 : Math.abs(lx) > 0.7 ? 0.9 : 1;
+    const sprint =
+      this.keys.has(c.controls.sprint) || this.keys.has(c.controls.sprintAlt);
+    const maxSpeed = sprint ? c.movement.sprintSpeed : c.movement.speed;
+    const guard = this.player.motion?.guard ?? 0;
     const pace =
-      (1.85 + (c.movement.speed - 1.85) * smooth(this.intentTime / 0.5)) *
-      directional;
+      (1.85 + (maxSpeed - 1.85) * smooth(this.intentTime / 0.5)) *
+      directional *
+      (1 - 0.42 * guard);
     x = (lx * Math.cos(this.viewYaw) + lz * Math.sin(this.viewYaw)) * pace;
     z = (lz * Math.cos(this.viewYaw) - lx * Math.sin(this.viewYaw)) * pace;
     if (this.targetVelocity) {

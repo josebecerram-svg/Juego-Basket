@@ -784,3 +784,32 @@ canvas:focus-visible {
     font-size: 8px;
   }
 }
+
+.action-help {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  color: #aabec5;
+  font-size: 11px;
+  margin: 10px 0 18px;
+  line-height: 1.8;
+}
+.action-help span {
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.action-help kbd {
+  display: inline-flex;
+  width: auto;
+  height: auto;
+  line-height: 1.3;
+  vertical-align: middle;
+  font: inherit;
+  color: #d5ff5f;
+  border: 1px solid #344b53;
+  border-radius: 3px;
+  padding: 2px 5px;
+  margin-right: 3px;
+}
