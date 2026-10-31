@@ -9,7 +9,7 @@ export const config = {
     fov: 66,
     radius: 0.24,
   },
-  aim: { sensitivity: 0.004, lockRange: 22, visibilityGrace: 0.25 },
+  aim: { sensitivity: 0.004, lockRange: 22, visibilityGrace: 0.25, lockResponse: 10 },
   dunk: {
     reach: 2.6,
     minRunSpeed: 3.8,

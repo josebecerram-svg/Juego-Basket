@@ -4,6 +4,7 @@ import { Practice } from "../src/practice.js";
 import { config as c } from "../src/config.js";
 import { inPaint } from "../src/dunk.js";
 import { mouseAim, toggleHoopLock, updateAim } from "../src/aim.js";
+import { powerFeedback } from "../src/hud.js";
 const dt = 1 / 240;
 const tick = (s) => {
   s.updateMovement(dt);
@@ -126,6 +127,69 @@ test("relative mouse aiming accumulates multiple full rotations without horizont
   mouseAim(s, 0, -100000);
   assert.equal(s.aim.angle, c.maxAngle);
 });
+test("green zone boundaries agree with the HUD and only green releases score", () => {
+  for (const reverse of [false, true])
+    for (const power of [c.dunk.greenLow - 0.001, c.dunk.greenLow,
+      c.dunk.greenHigh, c.dunk.greenHigh + 0.001]) {
+      const s = setup(reverse);
+      s.requestJump();
+      s.charge();
+      advance(s, 0.4);
+      s.power = power;
+      const green = power >= c.dunk.greenLow && power <= c.dunk.greenHigh;
+      assert.equal(powerFeedback(s).zone === "ideal", green);
+      s.release();
+      advance(s, 8);
+      assert.equal(s.stats.made, green ? 1 : 0);
+      assert.equal(s.stats.attempts, 1);
+    }
+});
+test("a new running jump can immediately start another dunk after landing", () => {
+  const s = setup();
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    s.player.x = 0;
+    s.player.z = c.hoop.z - 2.25;
+    s.movement.vx = 0;
+    s.movement.vz = 4.5;
+    assert.ok(s.requestJump());
+    assert.equal(s.motion.airTime, 0);
+    assert.ok(s.charge());
+    assert.equal(s.phase, "dunkCharge");
+    advance(s, 0.56 * c.dunk.chargeSeconds);
+    s.release();
+    advance(s, 8);
+    assert.equal(s.stats.made, attempt);
+    assert.equal(s.dunk, null);
+  }
+});
+test("running and reach must be real, and a late airborne charge remains a normal shot", () => {
+  for (const reason of ["stationary", "outOfReach", "late"] ) {
+    const s = setup();
+    if (reason === "stationary") s.movement.vz = 0;
+    s.requestJump();
+    if (reason === "outOfReach") s.player.x = c.dunk.reach + 0.1;
+    if (reason === "late") s.motion.airTime = 0.46;
+    assert.ok(s.charge());
+    assert.equal(s.phase, "charging", reason);
+  }
+});
+test("lock follows the shortest rotation across multiple turns and releases without snapping", () => {
+  const s = new Practice();
+  s.aim.yaw = Math.PI * 8 + 0.2;
+  s.visibleHoops = [c.hoop];
+  toggleHoopLock(s);
+  const initial = s.aim.yaw;
+  updateAim(s, dt);
+  assert.ok(s.aim.yaw < initial && s.aim.yaw > Math.PI * 8);
+  s.visibleHoops = [];
+  for (let i = 0; i < 70; i++) updateAim(s, dt);
+  assert.equal(s.aimLock, null);
+  const releasedYaw = s.aim.yaw;
+  updateAim(s, dt);
+  assert.equal(s.aim.yaw, releasedYaw);
+  mouseAim(s, 20, 0);
+  assert.equal(s.aim.yaw, releasedYaw - 20 * c.aim.sensitivity);
+});
 test("right lock selects nearest visible hoop, never shoots, follows movement and releases on toggle, range or occlusion", () => {
   const s = new Practice();
   s.visibleHoops = [c.hoop, c.baskets[1].hoop];
@@ -134,10 +198,12 @@ test("right lock selects nearest visible hoop, never shoots, follows movement an
   assert.equal(s.phase, "ready");
   assert.equal(s.stats.attempts, 0);
   s.player.x = 2;
+  const beforeLock = s.aim.yaw;
+  const targetYaw = Math.atan2(-2, c.hoop.z - s.player.z);
   updateAim(s, dt);
-  assert.ok(
-    Math.abs(s.aim.yaw - Math.atan2(-2, c.hoop.z - s.player.z)) < 0.000001,
-  );
+  assert.ok(s.aim.yaw < beforeLock && s.aim.yaw > targetYaw);
+  for (let i = 0; i < 480; i++) updateAim(s, dt);
+  assert.ok(Math.abs(s.aim.yaw - targetYaw) < 0.000001);
   const yaw = s.aim.yaw;
   mouseAim(s, 500, 0);
   assert.equal(s.aim.yaw, yaw);

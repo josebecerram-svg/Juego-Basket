@@ -18,6 +18,7 @@ export function jump(actor) {
   if (m.jumpStage !== "ground" || m.landing > 0.1) return false;
   m.jumpStage = "prepare";
   m.jumpTime = 0;
+  m.airTime = 0;
   return true;
 }
 export function stepMotion(actor, keys, phase, hasBall, movement, dt) {

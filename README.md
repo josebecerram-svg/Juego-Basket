@@ -1,4 +1,8 @@
-# Baseline · prototipo 12 · Clavadas y apuntado libre
+# Baseline · prototipo 13 · Clavadas consecutivas y mira suave
+
+## Novedades de la versión 13
+
+La fijación del aro orienta la mira progresivamente y toma el giro más corto, incluso después de varias vueltas completas. Cada salto reinicia su tiempo de vuelo: después de aterrizar puedes iniciar otra clavada inmediatamente con salto y clic izquierdo. Se conservan los controles y las condiciones de la clavada de la versión 12. La batería actual incluye 55 pruebas.
 
 Práctica de tiros y pases en tercera persona con Three.js, con Rivera (07) y Silva (12). Controlas a quien recibe el pase; el otro jugador actúa como compañero de apoyo de la computadora. Cancha interior de 15 × 28 m, parquet claro generado por código, zonas azules, líneas, dos tableros y aros a 3,05 m y graderías oscuras. La escena se construye con geometría 3D; no contiene una fotografía como fondo.
 
@@ -130,6 +134,6 @@ Modelo humano procedural estilizado, sin escaneo fotográfico ni captura de movi
 
 ## Publicación y caché
 
-La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **12**.
+La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **13**.
 
 Después de modificar archivos, ejecuta `npm run version:assets` y luego `npm test` antes de subir a `main`. `npm run dev` actualiza automáticamente las versiones al arrancar. La comprobación de pruebas detecta recursos modificados sin actualizar su identificador. GitHub Pages sigue publicando desde la raíz de `main`, sin compilación externa. Para una primera carga después de una actualización, añade `?release=IDENTIFICADOR` a la URL del juego; esto renueva el documento HTML además de sus módulos.

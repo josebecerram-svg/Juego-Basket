@@ -44,5 +44,6 @@ export function updateAim(s, dt) {
   }
   if (s.phase === "windup" || s.dunk?.active) return;
   const yaw = Math.atan2(h.x - s.player.x, h.z - s.player.z);
-  s.aim.yaw += angleDelta(s.aim.yaw, yaw);
+  s.aim.yaw +=
+    angleDelta(s.aim.yaw, yaw) * (1 - Math.exp(-c.aim.lockResponse * dt));
 }
