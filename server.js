@@ -19,6 +19,9 @@ http
             ".html": "text/html",
             ".js": "text/javascript",
             ".css": "text/css",
+            ".glb": "model/gltf-binary",
+            ".gltf": "model/gltf+json",
+            ".png": "image/png",
           }[extname(file)] || "application/octet-stream",
       });
       res.end(data);

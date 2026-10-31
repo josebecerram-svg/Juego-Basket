@@ -899,3 +899,27 @@ canvas:focus-visible {
   background: #2c4554;
   color: #fff;
 }
+
+.graphics-options {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 18px 0;
+}
+.graphics-options label {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.graphics-options select {
+  padding: 8px;
+  background: #18303e;
+  color: #eff5f4;
+  border: 1px solid #456373;
+  border-radius: 4px;
+}
+.graphics-options output {
+  font-variant-numeric: tabular-nums;
+  color: #b6cebb;
+}

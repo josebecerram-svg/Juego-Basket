@@ -1,34 +1,26 @@
-import { createGym } from "./gym.js";
+import { createArena } from "./graphics/arena.js";
+import { createAvatar } from "./graphics/avatars.js";
+import { stadiumLighting } from "./graphics/environment.js";
+import { createPipeline, QualityGovernor } from "./graphics/pipeline.js";
+import { basketballMaterial } from "./graphics/materials.js";
+import { graphics } from "./graphics/settings.js";
 import * as T from "../vendor/three.module.js";
 import { config as c } from "./config.js";
 import { createCamera } from "./camera.js";
-import { createPlayer } from "./player.js";
 import { athletes } from "./athletes.js";
 
-export function createScene(canvas) {
+export async function createScene(canvas) {
   const renderer = new T.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.25));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = T.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = false;
   renderer.toneMapping = T.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.1;
+  renderer.toneMappingExposure = graphics.exposure;
+  renderer.outputColorSpace = T.SRGBColorSpace;
+  renderer.info.autoReset = false;
   const scene = new T.Scene();
-  scene.background = new T.Color("#202c3a");
-  scene.fog = new T.Fog("#202c3a", 35, 100);
-  scene.add(new T.HemisphereLight("#f6f2e8", "#6d727d", 1.4));
-  const light = new T.DirectionalLight("#fff2d6", 1.3);
-  light.position.set(-4, 10, -2);
-  light.castShadow = true;
-  light.shadow.radius = 3;
-  Object.assign(light.shadow.camera, {
-    left: -12,
-    right: 12,
-    top: 12,
-    bottom: -12,
-  });
-  light.shadow.bias = -0.001;
-  light.shadow.mapSize.set(1024, 1024);
-  scene.add(light);
+  const lighting = await stadiumLighting(renderer, scene);
   const mat = (color, extra = {}) =>
     new T.MeshStandardMaterial({ color, roughness: 0.7, ...extra });
   function mesh(g, m, x, y, z) {
@@ -39,10 +31,11 @@ export function createScene(canvas) {
     scene.add(o);
     return o;
   }
-  const cameraObstacles = createGym(scene);
+  const arena = createArena(scene),
+    cameraObstacles = arena.obstacles;
   const ball = mesh(
     new T.SphereGeometry(c.ballRadius, 24, 16),
-    mat("#ed9953"),
+    basketballMaterial(),
     0,
     2.1,
     0,
@@ -56,10 +49,10 @@ export function createScene(canvas) {
     ball.add(seam);
   }
   const models = {
-    rivera: createPlayer(scene, athletes.rivera),
-    silva: createPlayer(scene, athletes.silva),
-    vega: createPlayer(scene, athletes.vega),
-    rios: createPlayer(scene, athletes.rios),
+    rivera: await createAvatar(scene, athletes.rivera),
+    silva: await createAvatar(scene, athletes.silva),
+    vega: await createAvatar(scene, athletes.vega),
+    rios: await createAvatar(scene, athletes.rios),
   };
   function marker(color) {
     const m = new T.Mesh(
@@ -112,11 +105,91 @@ export function createScene(canvas) {
     }
   }
   const rig = createCamera({ obstacles: cameraObstacles });
+  const pipeline = createPipeline(renderer, scene, rig.camera);
+  const extension = renderer
+    .getContext()
+    .getExtension("WEBGL_debug_renderer_info");
+  const device = extension
+    ? renderer.getContext().getParameter(extension.UNMASKED_RENDERER_WEBGL)
+    : "";
+  const software = /swiftshader|llvmpipe|software/i.test(device);
+  let mode = new URLSearchParams(location.search).get("quality") ?? "auto";
+  if (!["auto", "high", "balanced", "low"].includes(mode)) mode = "auto";
+  let quality = mode === "auto" ? (software ? "low" : "balanced") : mode;
+  let profile = graphics.profiles[quality],
+    width = 0,
+    height = 0,
+    lastFrame = performance.now(),
+    frameAverage = 0,
+    fps = 0;
+  const governor = new QualityGovernor(quality);
+  function setQuality(name) {
+    quality = name;
+    profile = graphics.profiles[name];
+    renderer.setPixelRatio(Math.min(devicePixelRatio, profile.pixelRatio));
+    lighting.setQuality(profile);
+    arena.setQuality(profile);
+    pipeline.setQuality(profile);
+    width = 0;
+  }
+  setQuality(quality);
+  const select = document.querySelector("#graphics-quality");
+  if (select) {
+    select.value = mode;
+    select.addEventListener("change", () => {
+      mode = select.value;
+      setQuality(mode === "auto" ? (software ? "low" : "balanced") : mode);
+      governor.level = quality;
+      governor.warmup = 4;
+    });
+  }
+  document
+    .querySelector("#depth-of-field")
+    ?.addEventListener("change", (e) =>
+      pipeline.setDepthOfField(e.target.checked),
+    );
+  const diagnostics = {
+    quality,
+    mode,
+    fps: 0,
+    drawCalls: 0,
+    triangles: 0,
+    models,
+  };
+
   return {
+    resetTiming() {
+      lastFrame = performance.now();
+    },
+    diagnostics,
+    renderer,
+    scene,
+    pipeline,
+    arena,
     render(shot, dt = 1 / 60) {
       const w = canvas.clientWidth,
         h = canvas.clientHeight;
-      renderer.setSize(w, h, false);
+      if (w !== width || h !== height) {
+        width = w;
+        height = h;
+        renderer.setSize(w, h, false);
+        pipeline.resize(w, h);
+      }
+      const now = performance.now(),
+        seconds = (now - lastFrame) / 1000;
+      lastFrame = now;
+      if (seconds > 0 && seconds < 2) {
+        frameAverage = frameAverage
+          ? frameAverage * 0.9 + seconds * 0.1
+          : seconds;
+        fps = 1 / frameAverage;
+      }
+      if (mode === "auto") {
+        const next = governor.sample(seconds);
+        if (next) setQuality(next);
+      }
+      arena.update(shot, dt);
+
       rig.update(w, h, shot, dt);
       models[shot.player.id].update(shot, dt);
       for (const a of shot.defenders ?? []) {
@@ -152,7 +225,33 @@ export function createScene(canvas) {
           : shot.phase === "passing"
             ? dt * 9
             : 0;
-      renderer.render(scene, rig.camera);
+      renderer.info.reset();
+      // Update light-space shadows once, then reuse them in reflections/AO/DOF.
+      renderer.shadowMap.needsUpdate = true;
+      pipeline.render(
+        dt,
+        rig.camera.position.distanceTo(
+          new T.Vector3(
+            shot.player.x,
+            1.4 + (shot.player.y ?? 0),
+            shot.player.z,
+          ),
+        ),
+      );
+      Object.assign(diagnostics, {
+        quality,
+        mode,
+        fps,
+        drawCalls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles,
+      });
+      const stats = document.querySelector("#graphics-stats");
+      if (stats)
+        stats.textContent =
+          Math.round(fps) +
+          " FPS · " +
+          { high: "Alta", balanced: "Equilibrada", low: "Baja" }[quality];
+
       const origin = rig.camera.position;
       shot.visibleHoops = c.baskets
         .map((b) => b.hoop)

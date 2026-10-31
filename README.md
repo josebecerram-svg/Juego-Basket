@@ -1,4 +1,16 @@
-# Baseline · prototipo 14 · Clavada automática y defensa 2 contra 2
+# Baseline · prototipo 15 · Arena PBR y personajes GLTF
+
+## Novedades de la versión 15
+
+La escena usa humanos GLTF con esqueleto y `AnimationMixer`, en lugar de personajes construidos con primitivas. Se incluye un avatar de demostración y una biblioteca de movimiento de los ejemplos oficiales de Three.js; los estados deportivos ausentes usan poses originales de demostración. Las rutas de los modelos, nombres de clips y adaptación de huesos están en `src/graphics/settings.js`. Estos recursos no son escaneos fotorrealistas ni animaciones deportivas con captura de movimiento: sustitúyelos por recursos de producción para alcanzar ese acabado. Ver [procedencia y sustitución de recursos](assets/README.md).
+
+El pabellón rodea la cancha con gradas, público instanciado, anillo superior, techo y cerchas, paneles LED animados, marcador central, canastas de metal y vidrio y redes amortiguadas que reaccionan al enceste. La madera usa una textura procedural 2048 × 4096 con pintura y líneas, mapa de rugosidad y barniz físico (`clearcoat: 1`, `clearcoatRoughness: 0.1`). El perfil alto añade reflejo planar en tiempo real, GTAO, bloom con umbral 0.85, sombras principales 4096 y ACES con exposición 1.2. Un HDR local sintético de interior se carga mediante RGBELoader y PMREM; puede sustituirse por un HDRI fotográfico con licencia. La profundidad de campo es opcional.
+
+**Calidad visual:** abre los ajustes de calidad y elige Automática, Alta, Equilibrada o Baja. Automática empieza equilibrada en GPU convencional y baja en renderizadores por software, y reduce calidad si persisten los fotogramas lentos. El perfil bajo reduce resolución y público y desactiva efectos costosos. Los valores de FPS son observados, no una garantía: 60 FPS dependen de la GPU, resolución y recursos definitivos. El navegador debe soportar WebGL 2. Los controles, colisiones, IA, pases, clavada automática y pausa conservan la lógica de la versión 14.
+
+`createScene(canvas)` es ahora asíncrona. Para integrarla, consulta [los módulos gráficos](src/graphics/README.md). No requiere instalar paquetes ni compilar: el motor y sus addons 0.170.0 están incluidos localmente. Los cambios de recursos se versionan con `npm run version:assets`.
+
+La batería incluye 72 pruebas: 68 de juego y cuatro de recursos, estados visuales, adaptación de calidad y normalización real de los cuatro esqueletos GLB. La validación de shaders y la inspección de la escena requieren además un navegador WebGL.
 
 ## Novedades de la versión 14
 
@@ -123,9 +135,9 @@ La potencia es azul en la zona baja, verde lima en la zona ideal y coral en la z
 - `practice.js`: actores con identidad estable, transferencia exclusiva de entrada al recibir, compañero de apoyo, vuelo asistido limitado, comprobación de recepción y recuperación de pases fallidos.
 - `physics.js`: balón en manos, carga, suelta desde una posición dinámica, trayectoria 3D, colisiones con ambos tableros y aros y suelo. La canasta exige un cruce descendente dentro de la abertura, antes del primer contacto con el suelo, una sola vez por intento.
 - `camera.js`: seguimiento cercano desde atrás, amortiguación de posición/giro/altura, volumen de seguridad y alternativas de hombro frente a obstáculos. Prioriza al controlado y evita el zoom panorámico.
-- `gym.js`: parquet procedural, pintura, líneas, canastas, gradas e iluminación interior.
+- `graphics/arena.js`: parquet PBR, estadio, canastas, gradas, público y pantallas.
 - `athletes.js`: perfiles visuales originales, estatura, complexión, rostro y equipación de cada actor.
-- `player.js`: modelo anatómico, equipación y articulaciones; brazos con cinemática inversa para mantener las manos en el balón.
+- `graphics/avatars.js`: carga GLTF, rig, retarget de demostración, materiales, mezcla de clips y cinemática inversa de brazos.
 - `pose.js`: preparación, carga, lanzamiento y transición de la postura al correr y detenerse. Comparte la posición del balón con la física.
 - `hud.js`: marcador de práctica, último resultado y referencia de potencia según distancia/elevación.
 - `controls.js`: teclado, apuntado directo, clic izquierdo y controles alternativos.
@@ -146,6 +158,6 @@ Modelo humano procedural estilizado, sin escaneo fotográfico ni captura de movi
 
 ## Publicación y caché
 
-La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **14**.
+La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **15**.
 
 Después de modificar archivos, ejecuta `npm run version:assets` y luego `npm test` antes de subir a `main`. `npm run dev` actualiza automáticamente las versiones al arrancar. La comprobación de pruebas detecta recursos modificados sin actualizar su identificador. GitHub Pages sigue publicando desde la raíz de `main`, sin compilación externa. Para una primera carga después de una actualización, añade `?release=IDENTIFICADOR` a la URL del juego; esto renueva el documento HTML además de sus módulos.

@@ -13,18 +13,36 @@ const canonical = original
   .replace(mapBlock, "<!-- asset-map:start --><!-- asset-map:end -->")
   .replace(/(style\.css|src\/main\.js)\?v=[a-f0-9]+/g, "$1")
   .replace(/data-build="[a-f0-9]+"/, 'data-build="BUILD"');
-const files = (await readdir(resolve(root, "src")))
-  .filter((name) => name.endsWith(".js"))
-  .sort()
-  .map((name) => `src/${name}`);
-files.push("vendor/three.module.js");
+async function moduleFiles(directory) {
+  const entries = await readdir(resolve(root, directory), {
+    withFileTypes: true,
+  });
+  const nested = await Promise.all(
+    entries.map((e) =>
+      e.isDirectory()
+        ? moduleFiles(`${directory}/${e.name}`)
+        : e.name.endsWith(".js")
+          ? [`${directory}/${e.name}`]
+          : [],
+    ),
+  );
+  return nested.flat().sort();
+}
+const files = [...(await moduleFiles("src")), ...(await moduleFiles("vendor"))];
 const hash = createHash("sha256").update(canonical);
-for (const file of [...files, "style.css"])
+for (const file of [
+  ...files,
+  "style.css",
+  "assets/characters/human-demo.glb",
+  "assets/characters/soldier-demo.glb",
+  "assets/environment/arena.hdr",
+])
   hash.update(file).update(await readFile(resolve(root, file)));
 const version = hash.digest("hex").slice(0, 12);
 const imports = Object.fromEntries(
   files.map((file) => [`./${file}`, `./${file}?v=${version}`]),
 );
+imports.three = `./vendor/three.module.js?v=${version}`;
 const block = `<!-- asset-map:start -->\n    <script type="importmap">\n${JSON.stringify({ imports }, null, 2)}\n    </script>\n    <!-- asset-map:end -->`;
 const updated = original
   .replace(mapBlock, block)
