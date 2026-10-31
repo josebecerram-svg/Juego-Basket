@@ -2,13 +2,13 @@ import { config as c } from "./config.js";
 export function powerFeedback(shot) {
   if (shot.dunk)
     return {
-      low: c.dunk.greenLow,
-      high: c.dunk.greenHigh,
+      low: shot.dunk.automatic ? 0.45 : c.dunk.greenLow,
+      high: shot.dunk.automatic ? 0.85 : c.dunk.greenHigh,
       reachable: true,
       zone:
-        shot.power < c.dunk.greenLow
+        shot.power < (shot.dunk.automatic ? 0.45 : c.dunk.greenLow)
           ? "low"
-          : shot.power <= c.dunk.greenHigh
+          : shot.power <= (shot.dunk.automatic ? 0.85 : c.dunk.greenHigh)
             ? "ideal"
             : "high",
     };
@@ -76,26 +76,35 @@ export function createHud() {
     meter.setAttribute("aria-valuenow", Math.round(shot.power * 100));
     $("#power-value").textContent = Math.round(shot.power * 100) + "%";
     $("#power-state").textContent =
-      shot.phase === "dunkCharge"
-        ? "CLAVADA · SUELTA EN VERDE"
-        : shot.phase === "dunkFinish"
-          ? "CLAVADA EN CURSO"
-          : ["passWindup", "passing", "receive"].includes(shot.phase)
-            ? "PASE EN CURSO"
-            : shot.phase === "passMiss"
-              ? "RECUPERANDO BALÓN"
-              : shot.phase === "charging"
-                ? {
-                    low: "POTENCIA BAJA",
-                    ideal: "ZONA IDEAL",
-                    high: "POTENCIA EXCESIVA",
-                  }[p.zone]
-                : shot.phase === "ready"
-                  ? "LISTO PARA LANZAR"
-                  : "POTENCIA DEL TIRO";
+      shot.phase === "autoDunk" || (shot.dunk?.automatic && shot.dunk.active)
+        ? "CLAVADA · IMPULSO " + Math.round(shot.power * 100) + "%"
+        : shot.phase === "dunkCharge"
+          ? "CLAVADA · SUELTA EN VERDE"
+          : shot.phase === "dunkFinish"
+            ? "CLAVADA EN CURSO"
+            : ["passWindup", "passing", "receive"].includes(shot.phase)
+              ? "PASE EN CURSO"
+              : shot.phase === "passMiss"
+                ? "RECUPERANDO BALÓN"
+                : shot.phase === "charging"
+                  ? {
+                      low: "POTENCIA BAJA",
+                      ideal: "ZONA IDEAL",
+                      high: "POTENCIA EXCESIVA",
+                    }[p.zone]
+                  : shot.phase === "ready"
+                    ? "LISTO PARA LANZAR"
+                    : "POTENCIA DEL TIRO";
     $(".feedback").textContent =
       (shot.scored ? "¡Canasta!" : shot.result) ??
       {
+        autoDunk: "Clavada automática · extensión al aro",
+        loose: shot.pickup
+          ? "Recogiendo el balón"
+          : "Balón suelto · sigue en juego",
+        opponent: "Defiende · E robo · Q manotazo · clic manos arriba",
+        opponentWindup: "Rival preparando tiro · disputa con las manos",
+        out: "BALÓN FUERA",
         ready:
           shot.motion?.jumpStage === "air"
             ? "Salto"
@@ -128,8 +137,15 @@ export function createHud() {
         ? shot.player.number + " · " + shot.player.name
         : shot.possession === "companion"
           ? shot.companion.number + " · " + shot.companion.name
-          : "BALÓN EN VUELO";
-    $("#pass-action").textContent = "Pasar";
+          : shot.carrier
+            ? shot.carrier.number + " · " + shot.carrier.name
+            : shot.phase === "loose"
+              ? "BALÓN SUELTO"
+              : "BALÓN EN VUELO";
+    $("#pass-action").textContent = shot.hasBall ? "Pasar" : "Robar";
+    $("#shoot").firstChild.textContent = shot.hasBall
+      ? "Lanzar "
+      : "Manos arriba ";
     $("#pass-status").textContent =
       shot.notice ||
       (shot.phase === "ready"

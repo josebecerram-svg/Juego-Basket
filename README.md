@@ -1,8 +1,20 @@
-# Baseline · prototipo 13 · Clavadas consecutivas y mira suave
+# Baseline · prototipo 14 · Clavada automática y defensa 2 contra 2
 
-## Novedades de la versión 13
+## Novedades de la versión 14
 
-La fijación del aro orienta la mira progresivamente y toma el giro más corto, incluso después de varias vueltas completas. Cada salto reinicia su tiempo de vuelo: después de aterrizar puedes iniciar otra clavada inmediatamente con salto y clic izquierdo. Se conservan los controles y las condiciones de la clavada de la versión 12. La batería actual incluye 55 pruebas.
+El juego inicia con cuatro jugadores originales: Rivera (07) y Silva (12), de rojo, contra Vega (23) y Ríos (31), de azul. Los rivales marcan entre los atacantes y el aro, reaccionan con demora y error, disputan tiros, intentan robar y recuperan el balón. Cuando recuperan, avanzan hacia la canasta contraria y pueden lanzar. El marcador rival aparece arriba. No se añaden faltas ni reglas competitivas completas.
+
+**Clavada automática:** con posesión, carrera real de al menos 3,8 m/s y Shift mantenido, pulsa Espacio dentro de la pintura azul de cualquiera de las dos canastas. No necesitas pulsar ni soltar el mouse para activar o completar la animación. La aproximación se guía hasta un punto seguro delante del aro; el brazo derecho extiende el balón y lo suelta en un contacto fijo. El impulso depende de la velocidad al comenzar. Si ya cargabas con clic izquierdo, se conserva esa potencia como fuerza de la clavada; con poca o demasiada fuerza el balón puede golpear el aro. La banda de potencia orienta sobre fuerza, no sobre una ventana temporal. No puedes iniciar otra acción hasta aterrizar. Fuera de estas condiciones, Espacio hace un salto normal y el clic izquierdo conserva el tiro normal.
+
+**Defensa sin balón:** E intenta un robo con preparación y recuperación, a menos de 1 m y mirando al portador; la protección y el momento del bote pueden impedirlo. Ctrl izquierdo mantiene una postura baja con brazos abiertos y orientación al atacante. Mantén clic izquierdo para elevar las manos; combínalo con Espacio para disputar en salto. Q ejecuta un manotazo cercano y orientado: desvía el balón, no entrega posesión automáticamente. Estas teclas conservan pase, pase elevado, protección y tiro cuando llevas el balón.
+
+**Balón vivo:** los fallos y los pases no recibidos dejan el balón en juego. Aunque se detenga en el suelo, no vuelve automáticamente a las manos. Acércate para iniciar una recogida visible de 0,35 s; solo al completarla cambia la posesión. Los cuatro jugadores pueden recogerlo. Si sale completamente de la cancha, se detiene la jugada y aparece «Balón fuera»; Enter o el botón repone el balón.
+
+**Pausa:** Esc detiene simulación, balón, animación e IA y muestra «Reanudar» y «Salir a la práctica». Si el cursor estaba capturado, también lo libera; liberar la captura pausa el juego. Esc o Reanudar continúa, y «Salir a la práctica» retira los defensores. Puedes capturar de nuevo el mouse con su botón. Se mantienen WASD, Shift, apuntado 360°, fijación con clic derecho, E/EE/Q con balón, F y cambio de control al recibir un pase.
+
+La versión 14 incluye 68 pruebas automatizadas. Las comprobaciones de esta versión cubren la aproximación desde varios puntos de ambas pinturas, contacto sin atravesar el tablero, fuerza correcta/insuficiente/excesiva, robo, manotazo, bloqueo de pie y en salto, error de posición, IA, separación, recogida, balón fuera y congelación completa al pausar. Se revisan también escena, clavada y controles reales en Chromium.
+
+Las secciones de versiones anteriores que siguen documentan la evolución del prototipo. La clavada automática y el balón vivo descritos arriba sustituyen la ventana de suelta y la recuperación automática de versiones anteriores.
 
 Práctica de tiros y pases en tercera persona con Three.js, con Rivera (07) y Silva (12). Controlas a quien recibe el pase; el otro jugador actúa como compañero de apoyo de la computadora. Cancha interior de 15 × 28 m, parquet claro generado por código, zonas azules, líneas, dos tableros y aros a 3,05 m y graderías oscuras. La escena se construye con geometría 3D; no contiene una fotografía como fondo.
 
@@ -128,12 +140,12 @@ La batería actual incluye 51 pruebas. Las de la versión 11 comprueban: además
 
 Las pruebas cubren continuidad de aceleración y giro, mezcla de ritmos, apoyo sin deslizamiento y llegada suave del pie. Se verifica que no cambie el control antes de recibir, que el receptor herede únicamente la entrada activa, que el pasador sea IA y que un fallo no transfiera control. En Chromium se prueban WASD, E, ambos cambios de jugador, nombres de la interfaz, tiro y canasta con Silva, conservación del marcador y recuperación de un pase fallido. También se revisan caminata, trote, carrera, lateral, retroceso, frenada y giro.
 
-## Límites
+## Límites de las versiones anteriores
 
 Modelo humano procedural estilizado, sin escaneo fotográfico ni captura de movimiento. Los pases tienen asistencia limitada para movimientos pequeños del receptor; no hay interceptaciones ni simulación competitiva de pases. Física de tiro simplificada; red decorativa y sin colisiones con el cuerpo, gradas o paredes. No hay recogida manual: recuperación automática. Movimiento para teclado; móvil conserva puntería y lanzamiento táctiles, sin joystick de desplazamiento. La computadora solo actúa como compañero de práctica; no hay historia, rivales, trucos ni modos multijugador. Three.js 0.170.0 se incluye localmente con su licencia MIT en `vendor/`.
 
 ## Publicación y caché
 
-La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **13**.
+La versión actual incluye un identificador de contenido en CSS, la entrada del juego y todo el grafo de módulos JavaScript, incluyendo Three.js. Así el navegador no mezcla módulos de publicaciones diferentes. El pie de página identifica la versión visible; esta etapa muestra **14**.
 
 Después de modificar archivos, ejecuta `npm run version:assets` y luego `npm test` antes de subir a `main`. `npm run dev` actualiza automáticamente las versiones al arrancar. La comprobación de pruebas detecta recursos modificados sin actualizar su identificador. GitHub Pages sigue publicando desde la raíz de `main`, sin compilación externa. Para una primera carga después de una actualización, añade `?release=IDENTIFICADOR` a la URL del juego; esto renueva el documento HTML además de sus módulos.

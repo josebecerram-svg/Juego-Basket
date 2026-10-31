@@ -9,7 +9,7 @@ export function bindControls(button, shot, canvas) {
   angle.max = (c.maxAngle * 180) / Math.PI;
   let owner = null;
   function setAim() {
-    if (shot.phase === "windup" || shot.dunk?.active) return;
+    if (shot.paused || shot.phase === "windup" || shot.dunk?.active) return;
     shot.aim.yaw = (Number(yaw.value) * Math.PI) / 180;
     shot.aim.angle = (Number(angle.value) * Math.PI) / 180;
   }
@@ -56,7 +56,11 @@ export function bindControls(button, shot, canvas) {
       );
     }
   });
+  let wasLocked = false;
   document.addEventListener("pointerlockchange", () => {
+    if (wasLocked && document.pointerLockElement !== canvas && !shot.paused)
+      shot.togglePause?.();
+    wasLocked = document.pointerLockElement === canvas;
     lastPoint = null;
     if (capture)
       capture.textContent =
@@ -97,7 +101,7 @@ export function bindControls(button, shot, canvas) {
   }
   // Mouse buttons share a pointer ID; a right-button release must never release a left-button charge.
   window.addEventListener("mouseup", (e) => {
-    if (e.button === 0 && owner) {
+    if (e.button === 0 && (owner || shot.phase === "charging")) {
       shot.release();
       owner = null;
     }
@@ -121,8 +125,16 @@ export function bindControls(button, shot, canvas) {
     e.target instanceof HTMLElement &&
     !!e.target.closest("input,button,a,textarea,select,[contenteditable]");
   window.addEventListener("keydown", (e) => {
-    if (e.code === "Escape" && document.pointerLockElement === canvas) {
-      document.exitPointerLock();
+    if (e.code === "Escape" && !e.repeat && shot.togglePause) {
+      e.preventDefault();
+      shot.togglePause();
+      if (document.pointerLockElement === canvas) document.exitPointerLock();
+      return;
+    }
+    if (shot.paused) return;
+    if (e.code === "Enter" && shot.phase === "out") {
+      e.preventDefault();
+      shot.inbound();
       return;
     }
     if (
@@ -162,13 +174,14 @@ export function bindControls(button, shot, canvas) {
     if (document.hidden) clear();
   });
   return () => {
-    button.disabled = ![
-      "ready",
-      "charging",
-      "fake",
-      "fakeReturn",
-      "dunkCharge",
-    ].includes(shot.phase);
+    button.disabled =
+      shot.paused ||
+      !!shot.dunk?.active ||
+      (shot.defenders && !shot.hasBall
+        ? shot.phase === "out"
+        : !["ready", "charging", "fake", "fakeReturn", "dunkCharge"].includes(
+            shot.phase,
+          ));
     yaw.disabled =
       shot.phase === "windup" || !!shot.aimLock || !!shot.dunk?.active;
     angle.disabled = shot.phase === "windup" || !!shot.dunk?.active;

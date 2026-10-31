@@ -31,8 +31,8 @@ export const athletes = {
     skin: "#906247",
     hair: "#171716",
     hairStyle: "coils",
-    kit: "#244e70",
-    shorts: "#183b59",
+    kit: "#d53820",
+    shorts: "#231f20",
     ink: "#edf2e4",
     trim: "#d7b982",
     shoe: "#263c51",
@@ -46,4 +46,30 @@ export const athletes = {
     socks: "#e5e9e3",
     shortsLength: 0.8,
   },
+};
+
+// Original rivals share a team palette, with distinct faces and readable numbers.
+athletes.vega = {
+  ...athletes.silva,
+  name: "VEGA",
+  number: "23",
+  kit: "#2466ad",
+  shorts: "#173854",
+  trim: "#8bc9ff",
+  height: 2.01,
+  skin: "#b77b52",
+  beard: false,
+  rhythm: 0.8,
+};
+athletes.rios = {
+  ...athletes.rivera,
+  name: "RÍOS",
+  number: "31",
+  kit: "#2466ad",
+  shorts: "#173854",
+  trim: "#8bc9ff",
+  height: 2.09,
+  skin: "#694b37",
+  hairStyle: "coils",
+  rhythm: 1.8,
 };

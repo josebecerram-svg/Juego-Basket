@@ -58,6 +58,8 @@ export function createScene(canvas) {
   const models = {
     rivera: createPlayer(scene, athletes.rivera),
     silva: createPlayer(scene, athletes.silva),
+    vega: createPlayer(scene, athletes.vega),
+    rios: createPlayer(scene, athletes.rios),
   };
   function marker(color) {
     const m = new T.Mesh(
@@ -80,6 +82,8 @@ export function createScene(canvas) {
   for (const [id, number, name] of [
     ["rivera", "07", "RIVERA"],
     ["silva", "12", "SILVA"],
+    ["vega", "23", "VEGA"],
+    ["rios", "31", "RÍOS"],
   ]) {
     labels[id] = {};
     for (const role of ["TÚ", "IA"]) {
@@ -115,6 +119,10 @@ export function createScene(canvas) {
       renderer.setSize(w, h, false);
       rig.update(w, h, shot, dt);
       models[shot.player.id].update(shot, dt);
+      for (const a of shot.defenders ?? []) {
+        models[a.id].group.visible = !shot.practiceMode;
+        if (!shot.practiceMode) models[a.id].update(shot.opponentState(a), dt);
+      }
       models[shot.companion.id].update(
         { ...shot.companionState(), gazeTarget: shot.ball },
         dt,
@@ -128,6 +136,7 @@ export function createScene(canvas) {
             actor.z,
           );
           label.visible =
+            !(shot.practiceMode && actor.team === "away") &&
             (actor === shot.player) === (role === "TÚ") &&
             !(actor === shot.player && shot.dunk?.active);
         }

@@ -2,7 +2,7 @@ import { config as c } from "./config.js";
 import { angleDelta } from "./movement.js";
 export const wrapYaw = (y) => Math.atan2(Math.sin(y), Math.cos(y));
 export function mouseAim(s, dx, dy) {
-  if (s.phase === "windup" || s.dunk?.active) return;
+  if (s.paused || s.phase === "windup" || s.dunk?.active) return;
   if (!s.aimLock) s.aim.yaw -= dx * c.aim.sensitivity;
   s.aim.angle = Math.max(
     c.minAngle,
@@ -10,6 +10,7 @@ export function mouseAim(s, dx, dy) {
   );
 }
 export function toggleHoopLock(s) {
+  if (s.paused) return false;
   if (s.aimLock) {
     s.aimLock = null;
     s.notify("Mira libre");
@@ -42,7 +43,7 @@ export function updateAim(s, dt) {
     s.notify("Aro fuera de vista o alcance · mira libre");
     return;
   }
-  if (s.phase === "windup" || s.dunk?.active) return;
+  if (s.paused || s.phase === "windup" || s.dunk?.active) return;
   const yaw = Math.atan2(h.x - s.player.x, h.z - s.player.z);
   s.aim.yaw +=
     angleDelta(s.aim.yaw, yaw) * (1 - Math.exp(-c.aim.lockResponse * dt));

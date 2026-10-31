@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="es" data-build="72fdaf800b12">
+<html lang="es" data-build="bec68b91e02e">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Baseline · Basketball Practice</title>
-    <link rel="stylesheet" href="style.css?v=72fdaf800b12" />
+    <link rel="stylesheet" href="style.css?v=bec68b91e02e" />
   </head>
   <body>
     <main>
@@ -15,7 +15,8 @@
           ></a
         >
         <div class="header-mode">
-          <i></i> PRÁCTICA CON COMPAÑERO <span>13</span>
+          <i></i> <span id="mode-label">2 CONTRA 2 · ROJO / AZUL</span>
+          <span>14</span> <span id="opponent-score">RIVAL 00</span>
         </div>
       </header>
       <section class="session-heading">
@@ -136,17 +137,22 @@
       </section>
       <button id="mouse-lock" class="mouse-lock">Capturar mouse · 360°</button>
       <p class="capture-help">
-        Captura opcional: Esc libera el mouse para usar la interfaz.
+        Esc pausa y libera el cursor. Pulsa Esc o Reanudar para continuar.
       </p>
       <p class="action-help">
         <span><kbd>Der.</kbd> Fijar aro · <kbd>Shift</kbd> Correr</span
         ><span><kbd>Ctrl izq.</kbd> Proteger</span
-        ><span><kbd>Espacio</kbd> Saltar</span
+        ><span><kbd>Espacio</kbd> Saltar / clavada automática</span
         ><span><kbd>F</kbd> Amagar / cancelar</span
         ><span
           ><kbd>E</kbd> Directo · <kbd>EE</kbd> Bote ·
           <kbd>Q</kbd> Elevado</span
         >
+      </p>
+      <p class="action-help">
+        Sin balón: <kbd>E</kbd> robo · <kbd>Ctrl izq.</kbd> postura defensiva ·
+        clic izquierdo manos arriba · <kbd>Espacio</kbd> + clic bloqueo en salto
+        · <kbd>Q</kbd> manotazo. Acércate al balón suelto para recogerlo.
       </p>
       <details class="settings">
         <summary>Ajustes de apuntado <span>+</span></summary>
@@ -170,37 +176,69 @@
         </p>
       </details>
       <footer>
-        <span>BASELINE / VERSIÓN 13 · CLAVADAS CONSECUTIVAS Y MIRA SUAVE</span
-        ><span>Cursor libre · Recuperación automática del balón</span>
+        <span
+          >BASELINE / VERSIÓN 14 · CLAVADA AUTOMÁTICA Y DEFENSA 2 CONTRA 2</span
+        ><span>Esc pausa · Balón suelto en juego</span>
       </footer>
     </main>
+    <div
+      id="pause-menu"
+      class="game-menu"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pause-title"
+    >
+      <div class="menu-card">
+        <p>BASELINE · VERSIÓN 14</p>
+        <h2 id="pause-title">Juego en pausa</h2>
+        <p>Balón, jugadores y defensores detenidos.</p>
+        <button id="resume">Reanudar</button
+        ><button id="practice">Salir a la práctica</button>
+      </div>
+    </div>
+    <div
+      id="out-menu"
+      class="game-menu"
+      hidden
+      role="dialog"
+      aria-labelledby="out-title"
+    >
+      <div class="menu-card">
+        <h2 id="out-title">Balón fuera</h2>
+        <p>La jugada está detenida.</p>
+        <button id="inbound">Reponer balón · Enter</button>
+      </div>
+    </div>
     <!-- asset-map:start -->
     <script type="importmap">
 {
   "imports": {
-    "./src/actions.js": "./src/actions.js?v=72fdaf800b12",
-    "./src/aim.js": "./src/aim.js?v=72fdaf800b12",
-    "./src/athletes.js": "./src/athletes.js?v=72fdaf800b12",
-    "./src/camera.js": "./src/camera.js?v=72fdaf800b12",
-    "./src/config.js": "./src/config.js?v=72fdaf800b12",
-    "./src/controls.js": "./src/controls.js?v=72fdaf800b12",
-    "./src/dunk.js": "./src/dunk.js?v=72fdaf800b12",
-    "./src/footwork.js": "./src/footwork.js?v=72fdaf800b12",
-    "./src/gym.js": "./src/gym.js?v=72fdaf800b12",
-    "./src/hud.js": "./src/hud.js?v=72fdaf800b12",
-    "./src/main.js": "./src/main.js?v=72fdaf800b12",
-    "./src/movement.js": "./src/movement.js?v=72fdaf800b12",
-    "./src/passing.js": "./src/passing.js?v=72fdaf800b12",
-    "./src/physics.js": "./src/physics.js?v=72fdaf800b12",
-    "./src/player.js": "./src/player.js?v=72fdaf800b12",
-    "./src/pose.js": "./src/pose.js?v=72fdaf800b12",
-    "./src/practice.js": "./src/practice.js?v=72fdaf800b12",
-    "./src/scene.js": "./src/scene.js?v=72fdaf800b12",
-    "./vendor/three.module.js": "./vendor/three.module.js?v=72fdaf800b12"
+    "./src/actions.js": "./src/actions.js?v=bec68b91e02e",
+    "./src/aim.js": "./src/aim.js?v=bec68b91e02e",
+    "./src/athletes.js": "./src/athletes.js?v=bec68b91e02e",
+    "./src/automatic-dunk.js": "./src/automatic-dunk.js?v=bec68b91e02e",
+    "./src/camera.js": "./src/camera.js?v=bec68b91e02e",
+    "./src/config.js": "./src/config.js?v=bec68b91e02e",
+    "./src/controls.js": "./src/controls.js?v=bec68b91e02e",
+    "./src/dunk.js": "./src/dunk.js?v=bec68b91e02e",
+    "./src/footwork.js": "./src/footwork.js?v=bec68b91e02e",
+    "./src/gym.js": "./src/gym.js?v=bec68b91e02e",
+    "./src/hud.js": "./src/hud.js?v=bec68b91e02e",
+    "./src/main.js": "./src/main.js?v=bec68b91e02e",
+    "./src/match.js": "./src/match.js?v=bec68b91e02e",
+    "./src/movement.js": "./src/movement.js?v=bec68b91e02e",
+    "./src/passing.js": "./src/passing.js?v=bec68b91e02e",
+    "./src/physics.js": "./src/physics.js?v=bec68b91e02e",
+    "./src/player.js": "./src/player.js?v=bec68b91e02e",
+    "./src/pose.js": "./src/pose.js?v=bec68b91e02e",
+    "./src/practice.js": "./src/practice.js?v=bec68b91e02e",
+    "./src/scene.js": "./src/scene.js?v=bec68b91e02e",
+    "./vendor/three.module.js": "./vendor/three.module.js?v=bec68b91e02e"
   }
 }
     </script>
     <!-- asset-map:end -->
-    <script type="module" src="src/main.js?v=72fdaf800b12"></script>
+    <script type="module" src="src/main.js?v=bec68b91e02e"></script>
   </body>
 </html>

@@ -79,7 +79,10 @@ export function heldPosition(shot) {
 export function playerPose(shot) {
   const speed = Math.min(
     1,
-    Math.hypot(shot.movement?.vx ?? 0, shot.movement?.vz ?? 0) /
+    (shot.dunk?.automatic && shot.dunk.active
+      ? shot.dunk.entrySpeed *
+        (1 - smooth(shot.dunk.age / (shot.dunk.approach * 0.25)))
+      : Math.hypot(shot.movement?.vx ?? 0, shot.movement?.vz ?? 0)) /
       c.movement.speed,
   );
   const stride = (shot.movement?.distance ?? 0) * 3.3;
@@ -215,6 +218,9 @@ export function handPosition(shot, pose, side) {
       y: mix(grip.y, 1.1 + 0.12 * guard, blend),
       z: mix(grip.z, 0.12 + 0.15 * guard, blend),
     };
+  }
+  if (shot.dunk?.automatic && shot.dunk.active && side > 0) {
+    return { x: center.x ?? 0.16, y: center.y - c.ballRadius, z: center.z };
   }
   if (shot.dunk?.active && side < 0) {
     const t = smooth((shot.dunk.age - 0.25) / 0.3);
